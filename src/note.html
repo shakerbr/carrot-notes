@@ -759,10 +759,11 @@
       border-color: var(--note-accent);
       color: var(--note-accent);
     }
-    .size-btn.active {
-      background: var(--note-accent);
+    .size-btn.active,
+    #note-card.theme-dark .size-btn.active {
+      background: var(--note-accent) !important;
       color: white !important;
-      border-color: var(--note-accent);
+      border-color: var(--note-accent) !important;
     }
     
     /* Format Menu Styles */
@@ -781,6 +782,15 @@
     .format-option:hover {
       background: var(--note-accent-light);
       color: var(--note-accent);
+    }
+    .format-option.active,
+    #note-card.theme-dark .format-option.active {
+      background: var(--note-accent-light) !important;
+      color: var(--note-accent) !important;
+      font-weight: 600;
+    }
+    .format-option.active .format-opt-icon {
+      stroke: var(--note-accent);
     }
     .format-option .shortcut {
       font-size: 9px;
@@ -939,7 +949,7 @@
     #active-formats-indicator {
       position: absolute;
       bottom: 8px;
-      right: 10px;
+      right: 18px;
       display: flex;
       gap: 4px;
       z-index: 99;
@@ -1899,6 +1909,16 @@
       toggleDropdown('font-dropdown-btn', 'font-dropdown-menu');
       toggleDropdown('format-dropdown-btn', 'format-dropdown-menu');
 
+      const formatMenu = document.getElementById('format-dropdown-menu');
+      const formatBtn = document.getElementById('format-dropdown-btn');
+      if (formatBtn && formatMenu) {
+        formatBtn.addEventListener('click', () => {
+          if (formatMenu.classList.contains('show')) {
+            updateFormatStates();
+          }
+        });
+      }
+
       // Click outside to close
       document.addEventListener('click', () => {
         closeAllDropdowns();
@@ -2574,6 +2594,9 @@
     function updateFormatStates() {
       if (isReadOnly()) {
         document.getElementById('active-formats-indicator').innerHTML = '';
+        document.querySelectorAll('.format-option[data-cmd="bold"], .format-option[data-cmd="italic"], .format-option[data-cmd="underline"], .format-option[data-cmd="strikeThrough"]').forEach(el => {
+          el.classList.remove('active');
+        });
         return;
       }
       
@@ -2593,6 +2616,11 @@
         try {
           isActive = document.queryCommandState(f.name);
         } catch (e) {}
+        
+        const formatOption = document.querySelector(`.format-option[data-cmd="${f.name}"]`);
+        if (formatOption) {
+          formatOption.classList.toggle('active', isActive);
+        }
         
         // Check if it transitioned to active (enabled)
         if (isActive && !activeFormats[f.name]) {
