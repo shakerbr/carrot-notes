@@ -125,31 +125,8 @@
     }
 
     .window-controls {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      flex-shrink: 0;
+      display: none !important;
     }
-
-    /* Frameless window resize hit-zones (Obsidian-style custom decoration) */
-    .resize-handles {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 200;
-    }
-    .resize-handle {
-      position: absolute;
-      pointer-events: auto;
-    }
-    .resize-n  { top: 0; left: 10px; right: 10px; height: 6px; cursor: n-resize; }
-    .resize-s  { bottom: 0; left: 10px; right: 10px; height: 6px; cursor: s-resize; }
-    .resize-e  { right: 0; top: 10px; bottom: 10px; width: 6px; cursor: e-resize; }
-    .resize-w  { left: 0; top: 10px; bottom: 10px; width: 6px; cursor: w-resize; }
-    .resize-ne { top: 0; right: 0; width: 12px; height: 12px; cursor: ne-resize; }
-    .resize-nw { top: 0; left: 0; width: 12px; height: 12px; cursor: nw-resize; }
-    .resize-se { bottom: 0; right: 0; width: 12px; height: 12px; cursor: se-resize; }
-    .resize-sw { bottom: 0; left: 0; width: 12px; height: 12px; cursor: sw-resize; }
 
     .btn-icon {
       background: transparent;
@@ -1209,16 +1186,6 @@
 
   <div id="app-container">
 
-    <div class="resize-handles" aria-hidden="true">
-      <div class="resize-handle resize-n" data-dir="North"></div>
-      <div class="resize-handle resize-s" data-dir="South"></div>
-      <div class="resize-handle resize-e" data-dir="East"></div>
-      <div class="resize-handle resize-w" data-dir="West"></div>
-      <div class="resize-handle resize-ne" data-dir="NorthEast"></div>
-      <div class="resize-handle resize-nw" data-dir="NorthWest"></div>
-      <div class="resize-handle resize-se" data-dir="SouthEast"></div>
-      <div class="resize-handle resize-sw" data-dir="SouthWest"></div>
-    </div>
     
     <!-- Custom Draggable Header -->
     <header id="drag-header">
@@ -1736,7 +1703,7 @@
           }
         });
 
-        setupResizeHandles(document.getElementById('app-container'));
+
       }
 
       // 3. Load Settings from Rust & populate UI
@@ -1769,17 +1736,6 @@
     document.getElementById('close-btn').addEventListener('click', () => {
       if (appWindow) appWindow.close(); // hides to system tray in Rust
     });
-
-    function setupResizeHandles(containerEl) {
-      if (!appWindow || !containerEl) return;
-      containerEl.querySelectorAll('.resize-handle').forEach(handle => {
-        handle.addEventListener('mousedown', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          appWindow.startResizeDragging(handle.dataset.dir);
-        });
-      });
-    }
 
     // Tab switcher
     window.switchTab = function(tabId) {
@@ -2482,7 +2438,6 @@
         pinned: false,
         isOpen: true,
         isTemporary: true,
-        alwaysOnTop: false,
         fontFamily: settings.defaultFont.family,
         fontSize: settings.defaultFont.size,
         width: settings.defaultSize.width,
@@ -2591,7 +2546,7 @@
             y: note.y || null,
             width: note.width || settings.defaultSize.width,
             height: note.height || settings.defaultSize.height,
-            alwaysOnTop: note.alwaysOnTop || false
+            pinned: note.pinned || false
           }).catch(console.error);
         }
       }

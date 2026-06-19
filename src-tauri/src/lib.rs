@@ -330,7 +330,7 @@ fn open_note_window(
     y: Option<f64>,
     width: Option<f64>,
     height: Option<f64>,
-    always_on_top: Option<bool>,
+    pinned: Option<bool>,
 ) -> Result<(), String> {
     let label = format!("note_{}", id);
 
@@ -351,7 +351,7 @@ fn open_note_window(
     .title("CarrotNote")
     .inner_size(w, h)
     .min_inner_size(180.0, 150.0)
-    .decorations(false)
+    .decorations(true)
     .transparent(true)
     .resizable(true)
     .skip_taskbar(true);
@@ -359,8 +359,8 @@ fn open_note_window(
         win_builder = win_builder.position(px, py);
     }
 
-    if let Some(aot) = always_on_top {
-        win_builder = win_builder.always_on_top(aot);
+    if let Some(p) = pinned {
+        win_builder = win_builder.always_on_top(p);
     }
 
     let win = win_builder.build().map_err(|e| e.to_string())?;
@@ -374,17 +374,14 @@ fn open_note_window(
         }
     });
 
-    // Apply GTK always-on-top hints on Linux (only when requested)
+    // Apply GTK settings on Linux to handle Wayland always-on-top and utility layout
     #[cfg(target_os = "linux")]
     {
         use gtk::prelude::*;
         if let Ok(gtk_window) = win.gtk_window() {
-            if always_on_top.unwrap_or(false) {
-                gtk_window.set_type_hint(gtk::gdk::WindowTypeHint::Utility);
-                gtk_window.set_keep_above(true);
-            } else {
-                gtk_window.set_type_hint(gtk::gdk::WindowTypeHint::Normal);
-                gtk_window.set_keep_above(false);
+            gtk_window.set_type_hint(gtk::gdk::WindowTypeHint::Utility);
+            if let Some(p) = pinned {
+                gtk_window.set_keep_above(p);
             }
         }
     }
