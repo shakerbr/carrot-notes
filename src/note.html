@@ -60,6 +60,26 @@
       color: var(--note-text);
     }
 
+    /* Frameless window resize hit-zones */
+    .resize-handles {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .resize-handle {
+      position: absolute;
+      pointer-events: auto;
+    }
+    .resize-n  { top: 0; left: 10px; right: 10px; height: 6px; cursor: n-resize; }
+    .resize-s  { bottom: 0; left: 10px; right: 10px; height: 6px; cursor: s-resize; }
+    .resize-e  { right: 0; top: 10px; bottom: 10px; width: 6px; cursor: e-resize; }
+    .resize-w  { left: 0; top: 10px; bottom: 10px; width: 6px; cursor: w-resize; }
+    .resize-ne { top: 0; right: 0; width: 12px; height: 12px; cursor: ne-resize; }
+    .resize-nw { top: 0; left: 0; width: 12px; height: 12px; cursor: nw-resize; }
+    .resize-se { bottom: 0; right: 0; width: 12px; height: 12px; cursor: se-resize; }
+    .resize-sw { bottom: 0; left: 0; width: 12px; height: 12px; cursor: sw-resize; }
+
 
 
     /* Programmatic drag header */
@@ -98,7 +118,10 @@
     }
 
     .window-controls {
-      display: none !important;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      flex-shrink: 0;
     }
 
     .btn-icon {
@@ -166,6 +189,12 @@
     .note-editor input[type="checkbox"] {
       user-select: none !important;
     }
+
+    /* Rich-text formatting inside the editor */
+    .note-editor b, .note-editor strong { font-weight: 700; }
+    .note-editor i, .note-editor em { font-style: italic; }
+    .note-editor u { text-decoration: underline; text-underline-offset: 2px; }
+    .note-editor s, .note-editor strike, .note-editor del { text-decoration: line-through; opacity: 0.85; }
 
     /* Custom thin scrollbar for note editor */
     .note-editor::-webkit-scrollbar {
@@ -425,16 +454,7 @@
     }
     
     .temp-badge {
-      font-size: 8px;
-      font-weight: 700;
-      background: var(--note-accent);
-      color: white;
-      padding: 1px 4px;
-      border-radius: 3px;
-      text-transform: uppercase;
-      margin-left: 2px;
-      display: inline-block;
-      flex-shrink: 0;
+      display: none !important;
     }
     
     .header-controls {
@@ -480,17 +500,18 @@
     #more-btn {
       display: none;
     }
-
-    /* Narrow layout overrides */
-    .narrow-layout #title-container {
-      display: none;
-    }
     .narrow-layout #more-btn {
       display: flex;
     }
+
+    /* Narrow layout: collapse action buttons into sub-toolbar, title stays if space allows */
     .narrow-layout .header-controls {
       flex: 1;
       justify-content: flex-end;
+    }
+    
+    #title-container.hidden-for-space {
+      display: none !important;
     }
     
     /* Dropdowns */
@@ -771,11 +792,17 @@
       background: #FF9E42;
     }
     
-    /* Save indicator and button highlight */
-    #save-btn.unsaved {
+    /* Save / temp-unsaved button highlight */
+    #save-btn.unsaved,
+    #save-btn.temp-unsaved,
+    #more-btn.temp-unsaved {
       color: var(--note-accent) !important;
       background: var(--note-accent-light) !important;
-      box-shadow: 0 0 8px var(--note-accent-light);
+      box-shadow: 0 0 0 1px var(--note-accent-light), 0 0 10px var(--note-accent-light);
+    }
+    #save-btn.temp-unsaved svg,
+    #more-btn.temp-unsaved svg {
+      stroke: var(--note-accent);
     }
     
     /* Dialog Overlay */
@@ -878,38 +905,54 @@
       pointer-events: none !important;
     }
 
-    /* Active Formats Toast & Bottom Pills */
+    /* Active Formats Bubble (floating toolbar) */
     #active-formats-indicator {
       position: absolute;
-      bottom: 8px;
-      left: 10px;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
       display: flex;
-      gap: 4px;
+      align-items: center;
+      gap: 3px;
+      padding: 5px 8px;
       z-index: 99;
       pointer-events: none;
+      background: rgba(255, 255, 255, 0.94);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 12px;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.14), 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+    #note-card.theme-dark #active-formats-indicator {
+      background: rgba(35, 35, 42, 0.94);
+      border-color: rgba(255, 255, 255, 0.1);
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
     }
     .format-pill {
       pointer-events: auto;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      background: var(--note-accent);
-      color: white;
-      width: 22px;
-      height: 22px;
-      border-radius: 6px;
+      background: var(--note-accent-light);
+      color: var(--note-accent);
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
       cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      border: 1px solid transparent;
       transition: all 0.15s ease;
     }
     .format-pill:hover {
       background: #ff4d4d;
-      transform: scale(1.1);
+      color: white;
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: scale(1.08);
     }
     .format-pill svg {
-      width: 11px;
-      height: 11px;
-      stroke-width: 3px;
+      width: 12px;
+      height: 12px;
+      stroke-width: 2.5px;
     }
     #format-toast {
       position: absolute;
@@ -946,8 +989,17 @@
 
   <!-- Floating Sticky Note Card -->
   <div id="note-card" class="theme-orange">
-    
 
+    <div class="resize-handles" aria-hidden="true">
+      <div class="resize-handle resize-n" data-dir="North"></div>
+      <div class="resize-handle resize-s" data-dir="South"></div>
+      <div class="resize-handle resize-e" data-dir="East"></div>
+      <div class="resize-handle resize-w" data-dir="West"></div>
+      <div class="resize-handle resize-ne" data-dir="NorthEast"></div>
+      <div class="resize-handle resize-nw" data-dir="NorthWest"></div>
+      <div class="resize-handle resize-se" data-dir="SouthEast"></div>
+      <div class="resize-handle resize-sw" data-dir="SouthWest"></div>
+    </div>
     
     <header id="drag-header">
       <div class="brand">
@@ -1172,8 +1224,8 @@
 
         <span class="ctrl-separator"></span>
 
-        <!-- Always on Top toggle -->
-        <button id="pin-btn" class="btn-icon no-drag" title="Always on Top">
+        <!-- Always on Top toggle (not the same as dashboard "pinned") -->
+        <button id="always-on-top-btn" class="btn-icon no-drag" title="Always on Top">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <line x1="12" y1="17" x2="12" y2="22"></line>
             <path d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.55A2 2 0 0 1 15 9.21V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v4.21a2 2 0 0 1-.78 1.24L5.44 14a2 2 0 0 0-.44 1.24V17z"></path>
@@ -1209,10 +1261,6 @@
     <!-- Active formatting indicators container -->
     <div id="active-formats-indicator" class="no-drag"></div>
 
-
-
-  </div>
-
   </div>
 
   <!-- Save Title Dialog Overlay -->
@@ -1238,7 +1286,7 @@
 
     let noteCardEl = document.getElementById('note-card');
     let editorEl = document.getElementById('editor');
-    let pinBtn = document.getElementById('pin-btn');
+    let alwaysOnTopBtn = document.getElementById('always-on-top-btn');
     let minBtn = document.getElementById('min-btn');
     let closeBtn = document.getElementById('close-btn');
     let saveBtn = document.getElementById('save-btn');
@@ -1248,9 +1296,11 @@
 
     let notes = [];
     let noteData = null;
-    let isPinned = false;
+    let isAlwaysOnTop = false;
     let isLocked = false;
     let appWindow = null;
+    let savedSelection = null;
+    let contentSyncTimer = null;
 
     // Global settings loaded from Rust
     let settings = {
@@ -1287,8 +1337,10 @@
           }
         });
 
-
+        setupResizeHandles(noteCardEl);
       }
+
+      initEditorCommands();
 
       // Load Settings from backend if available
       await loadSettings();
@@ -1316,13 +1368,15 @@
           rotation: 0,
           pinned: false,
           isOpen: true,
-          isTemporary: true
+          isTemporary: true,
+          alwaysOnTop: false
         };
         notes.push(noteData);
       }
 
       // Fill in defaults if not present
       if (noteData.isTemporary === undefined) noteData.isTemporary = false;
+      if (noteData.alwaysOnTop === undefined) noteData.alwaysOnTop = false;
       if (!noteData.title) {
         let n = 1;
         while (notes.some(note => note.title.trim().toLowerCase() === `note ${n}`)) {
@@ -1435,8 +1489,11 @@
       isLocked = settings.defaultReadOnly ? true : (noteData.readOnly || false);
       updateReadOnlyUI();
 
-      isPinned = noteData.pinned || false;
-      updatePinUI();
+      isAlwaysOnTop = noteData.alwaysOnTop || false;
+      updateAlwaysOnTopUI();
+      if (isAlwaysOnTop && appWindow && invoke) {
+        invoke('set_always_on_top', { alwaysOnTop: true }).catch(console.error);
+      }
 
       // Hook format checklist checkboxes listeners
       attachChecklistListeners();
@@ -1459,13 +1516,13 @@
               noteTitleDisplay.innerText = updatedNote.title;
               noteTitleInput.value = updatedNote.title;
             }
-            // Update pin/always-on-top if changed
-            if (updatedNote.pinned !== noteData.pinned) {
-              noteData.pinned = updatedNote.pinned;
-              isPinned = updatedNote.pinned;
-              updatePinUI();
+            // Update always-on-top if changed from dashboard (pinned is separate)
+            if (updatedNote.alwaysOnTop !== noteData.alwaysOnTop) {
+              noteData.alwaysOnTop = updatedNote.alwaysOnTop;
+              isAlwaysOnTop = updatedNote.alwaysOnTop;
+              updateAlwaysOnTopUI();
               if (appWindow && invoke) {
-                invoke('set_always_on_top', { alwaysOnTop: isPinned }).catch(console.error);
+                invoke('set_always_on_top', { alwaysOnTop: isAlwaysOnTop }).catch(console.error);
               }
             }
             // Update readOnly if changed
@@ -1487,15 +1544,19 @@
         });
       }
 
-      // Setup responsive resize collapsing
-      const handleResize = () => {
-        const width = window.innerWidth;
-        const headerControls = document.querySelector('.header-controls');
-        const subToolbar = document.getElementById('sub-toolbar');
-        const actionsList = document.getElementById('actions-list');
-        const moreBtn = document.getElementById('more-btn');
-        
-        if (width < 320) {
+      // Smart responsive header layout
+      const headerEl = document.getElementById('drag-header');
+      const titleContainer = document.getElementById('title-container');
+      const headerControls = document.querySelector('.header-controls');
+      const subToolbar = document.getElementById('sub-toolbar');
+      const actionsList = document.getElementById('actions-list');
+      const moreBtn = document.getElementById('more-btn');
+
+      const updateHeaderLayout = () => {
+        const width = headerEl.offsetWidth;
+        const compactActions = width < 360;
+
+        if (compactActions) {
           noteCardEl.classList.add('narrow-layout');
           if (actionsList && actionsList.parentElement !== subToolbar) {
             subToolbar.appendChild(actionsList);
@@ -1507,11 +1568,26 @@
             headerControls.insertBefore(actionsList, moreBtn);
           }
         }
+
+        // Measure remaining space for title dynamically
+        const brandW = headerEl.querySelector('.brand')?.offsetWidth || 28;
+        const controlsW = headerControls?.offsetWidth || 100;
+        const reserved = brandW + controlsW + (compactActions ? (moreBtn?.offsetWidth || 26) : (actionsList?.offsetWidth || 120)) + 24;
+        const titleSpace = width - reserved;
+
+        if (titleSpace >= 48) {
+          titleContainer.classList.remove('hidden-for-space');
+        } else {
+          titleContainer.classList.add('hidden-for-space');
+        }
       };
-      
-      window.addEventListener('resize', handleResize);
-      // Run once layout sizing is complete
-      setTimeout(handleResize, 100);
+
+      window.addEventListener('resize', updateHeaderLayout);
+      if (typeof ResizeObserver !== 'undefined') {
+        const ro = new ResizeObserver(updateHeaderLayout);
+        ro.observe(headerEl);
+      }
+      setTimeout(updateHeaderLayout, 50);
 
       // Toggle sub-toolbar from more button
       const moreBtn = document.getElementById('more-btn');
@@ -1519,6 +1595,7 @@
       moreBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         subToolbar.classList.toggle('show');
+        setTimeout(updateHeaderLayout, 0);
       });
 
       // Listen to resize/move to save sizes dynamically
@@ -1540,21 +1617,10 @@
         appWindow.onMoved(savePositionSize);
       }
 
-      // Auto-save on typing inside note (if autosave is enabled)
-      let typingTimer;
-      editorEl.addEventListener('keyup', () => {
+      // Auto-save on typing inside note (debounced, preserves undo stack)
+      editorEl.addEventListener('input', () => {
         if (isReadOnly()) return;
-        
-        if (settings.autosave) {
-          clearTimeout(typingTimer);
-          typingTimer = setTimeout(() => {
-            noteData.content = editorEl.innerHTML;
-            persistNotes();
-          }, settings.autosaveInterval * 1000 || 2000);
-        } else {
-          noteData.content = editorEl.innerHTML;
-          markUnsavedChanges();
-        }
+        scheduleContentSync();
       });
       
       // Also save checklist changes
@@ -1566,8 +1632,17 @@
         }
       });
 
-      // Hook active formatting state listeners
-      document.addEventListener('selectionchange', updateFormatStates);
+      // Editor keyboard shortcuts (undo/redo/select-all + formatting)
+      editorEl.addEventListener('keydown', handleEditorKeydown);
+      document.addEventListener('keydown', handleGlobalKeydown);
+
+      // Preserve selection when interacting with toolbar
+      document.addEventListener('selectionchange', () => {
+        if (!isReadOnly()) saveSelection();
+        updateFormatStates();
+      });
+      editorEl.addEventListener('keyup', updateFormatStates);
+      editorEl.addEventListener('mouseup', updateFormatStates);
       editorEl.addEventListener('keyup', updateFormatStates);
       editorEl.addEventListener('mouseup', updateFormatStates);
       
@@ -1576,10 +1651,138 @@
     });
 
     function updateTempBadge() {
-      if (noteData.isTemporary) {
-        tempBadge.style.display = 'inline-block';
+      const moreBtn = document.getElementById('more-btn');
+      if (noteData && noteData.isTemporary) {
+        saveBtn.classList.add('temp-unsaved');
+        if (moreBtn) moreBtn.classList.add('temp-unsaved');
       } else {
-        tempBadge.style.display = 'none';
+        saveBtn.classList.remove('temp-unsaved');
+        if (moreBtn) moreBtn.classList.remove('temp-unsaved');
+      }
+    }
+
+    function setupResizeHandles(containerEl) {
+      if (!appWindow || !containerEl) return;
+      containerEl.querySelectorAll('.resize-handle').forEach(handle => {
+        handle.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          appWindow.startResizeDragging(handle.dataset.dir);
+        });
+      });
+    }
+
+    function initEditorCommands() {
+      try {
+        document.execCommand('defaultParagraphSeparator', false, 'div');
+        document.execCommand('styleWithCSS', false, true);
+      } catch (e) {}
+      editorEl.addEventListener('focus', () => {
+        try {
+          document.execCommand('defaultParagraphSeparator', false, 'div');
+          document.execCommand('styleWithCSS', false, true);
+        } catch (e) {}
+      });
+    }
+
+    function saveSelection() {
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        if (editorEl.contains(range.commonAncestorContainer)) {
+          savedSelection = range.cloneRange();
+        }
+      }
+    }
+
+    function restoreSelection() {
+      if (!savedSelection) return;
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(savedSelection);
+    }
+
+    function scheduleContentSync() {
+      noteData.content = editorEl.innerHTML;
+      clearTimeout(contentSyncTimer);
+      if (settings.autosave) {
+        contentSyncTimer = setTimeout(() => {
+          persistNotes();
+        }, settings.autosaveInterval * 1000 || 2000);
+      } else {
+        markUnsavedChanges();
+      }
+    }
+
+    function handleEditorKeydown(e) {
+      if (isReadOnly()) return;
+
+      const inChecklist = e.target.closest('.checklist-text');
+
+      if (e.ctrlKey && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        if (inChecklist) {
+          const span = inChecklist;
+          const range = document.createRange();
+          range.selectNodeContents(span);
+          const sel = window.getSelection();
+          sel.removeAllRanges();
+          sel.addRange(range);
+        } else {
+          editorEl.focus();
+          document.execCommand('selectAll');
+        }
+        return;
+      }
+
+      if (e.ctrlKey && e.key.toLowerCase() === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        document.execCommand('undo');
+        scheduleContentSync();
+        updateFormatStates();
+        return;
+      }
+
+      if ((e.ctrlKey && e.key.toLowerCase() === 'y') ||
+          (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'z')) {
+        e.preventDefault();
+        document.execCommand('redo');
+        scheduleContentSync();
+        updateFormatStates();
+        return;
+      }
+
+      if (e.ctrlKey && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        formatDoc('bold');
+      } else if (e.ctrlKey && e.key.toLowerCase() === 'i') {
+        e.preventDefault();
+        formatDoc('italic');
+      } else if (e.ctrlKey && e.key.toLowerCase() === 'u') {
+        e.preventDefault();
+        formatDoc('underline');
+      } else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === 'X') {
+        e.preventDefault();
+        formatDoc('strikeThrough');
+      } else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === 'L') {
+        e.preventDefault();
+        formatDoc('insertUnorderedList');
+      } else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === 'O') {
+        e.preventDefault();
+        formatDoc('insertOrderedList');
+      } else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === 'C') {
+        e.preventDefault();
+        insertChecklist();
+      }
+    }
+
+    function handleGlobalKeydown(e) {
+      if (isReadOnly()) return;
+      if (e.target === noteTitleInput || e.target.closest('.dialog-overlay')) return;
+
+      if (e.ctrlKey && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        saveNoteManual();
       }
     }
 
@@ -1888,22 +2091,22 @@
       }
     }
 
-    // Pin window toggle handler
-    pinBtn.addEventListener('click', () => {
-      isPinned = !isPinned;
-      noteData.pinned = isPinned;
-      updatePinUI();
+    // Always-on-top toggle (separate from dashboard "pinned")
+    alwaysOnTopBtn.addEventListener('click', () => {
+      isAlwaysOnTop = !isAlwaysOnTop;
+      noteData.alwaysOnTop = isAlwaysOnTop;
+      updateAlwaysOnTopUI();
       if (appWindow && invoke) {
-        invoke('set_always_on_top', { alwaysOnTop: isPinned }).catch(console.error);
+        invoke('set_always_on_top', { alwaysOnTop: isAlwaysOnTop }).catch(console.error);
       }
       persistNotes();
     });
 
-    function updatePinUI() {
-      if (isPinned) {
-        pinBtn.classList.add('active');
+    function updateAlwaysOnTopUI() {
+      if (isAlwaysOnTop) {
+        alwaysOnTopBtn.classList.add('active');
       } else {
-        pinBtn.classList.remove('active');
+        alwaysOnTopBtn.classList.remove('active');
       }
     }
 
@@ -2015,6 +2218,7 @@
       
       noteData.title = title;
       noteData.isTemporary = false;
+      document.getElementById('note-title-display').innerText = title;
       noteTitleInput.value = title;
       updateTempBadge();
       
@@ -2037,13 +2241,17 @@
     // Formatting operations
     window.formatDoc = function(cmd, val = null) {
       if (isReadOnly()) return;
-      document.execCommand(cmd, false, val);
-      noteData.content = editorEl.innerHTML;
-      if (settings.autosave) {
-        persistNotes();
-      } else {
-        markUnsavedChanges();
+      saveSelection();
+      editorEl.focus();
+      restoreSelection();
+      try {
+        document.execCommand('defaultParagraphSeparator', false, 'div');
+        document.execCommand(cmd, false, val);
+      } catch (e) {
+        console.error('Format command failed:', cmd, e);
       }
+      scheduleContentSync();
+      updateFormatStates();
     };
 
     // Helper to bind events (change, keydown) to checklist items
@@ -2352,49 +2560,7 @@
       }
     }
     
-    // Check keybindings
-    document.addEventListener('keydown', (e) => {
-      const isFormatKey = e.ctrlKey && (
-        e.key.toLowerCase() === 'b' || 
-        e.key.toLowerCase() === 'i' || 
-        e.key.toLowerCase() === 'u' || 
-        e.key.toLowerCase() === 's' || 
-        (e.shiftKey && (e.key.toUpperCase() === 'L' || e.key.toUpperCase() === 'C' || e.key.toUpperCase() === 'X' || e.key.toUpperCase() === 'O'))
-      );
-      
-      if (isReadOnly()) {
-        if (isFormatKey) {
-          e.preventDefault();
-        }
-        return;
-      }
-
-      if (e.ctrlKey && e.key.toLowerCase() === 'b') {
-        e.preventDefault();
-        formatDoc('bold');
-      } else if (e.ctrlKey && e.key.toLowerCase() === 'i') {
-        e.preventDefault();
-        formatDoc('italic');
-      } else if (e.ctrlKey && e.key.toLowerCase() === 'u') {
-        e.preventDefault();
-        formatDoc('underline');
-      } else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === 'X') {
-        e.preventDefault();
-        formatDoc('strikeThrough');
-      } else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === 'L') {
-        e.preventDefault();
-        formatDoc('insertUnorderedList');
-      } else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === 'O') {
-        e.preventDefault();
-        formatDoc('insertOrderedList');
-      } else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === 'C') {
-        e.preventDefault();
-        insertChecklist();
-      } else if (e.ctrlKey && e.key.toLowerCase() === 's') {
-        e.preventDefault();
-        saveNoteManual();
-      }
-    });
+    // Check keybindings handled in handleEditorKeydown / handleGlobalKeydown
 
     // Helper for syncing on save
     function triggerSyncIfOnSave(notesJson) {
@@ -2516,19 +2682,7 @@
       }
     }
 
-    // Format wrapper command override to immediately trigger updates
-    const origFormatDoc = window.formatDoc;
-    window.formatDoc = function(cmd, val = null) {
-      if (isReadOnly()) return;
-      document.execCommand(cmd, false, val);
-      noteData.content = editorEl.innerHTML;
-      if (settings.autosave) {
-        persistNotes();
-      } else {
-        markUnsavedChanges();
-      }
-      updateFormatStates();
-    };
+    // Format wrapper removed — formatDoc defined once above
   </script>
 </body>
 </html>
