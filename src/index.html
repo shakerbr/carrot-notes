@@ -1,0 +1,2894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CarrotNotes</title>
+  <!-- Google Fonts for modern UI and handwriting look -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400..700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* CSS Variables & Reset matching the note theme */
+    :root {
+      --primary-color: #FF7A00;
+      --primary-hover: #E06B00;
+      --primary-light: rgba(255, 122, 0, 0.08);
+      --primary-glow: rgba(255, 122, 0, 0.25);
+      
+      /* Solid modern backgrounds */
+      --bg-main-light: #F7F6F2;
+      --bg-main-dark: #121215;
+      
+      --bg-card-light: #FFFFFF;
+      --bg-card-dark: #1B1B20;
+      
+      --border-light: rgba(0, 0, 0, 0.05);
+      --border-dark: rgba(255, 255, 255, 0.05);
+      
+      --text-light: #2c2c35;
+      --text-dark: #f0f0f5;
+      --font-ui: 'Inter', sans-serif;
+      --font-hand: 'Caveat', cursive;
+    }
+
+    html {
+      background: transparent !important;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      text-shadow: none !important;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: var(--font-ui);
+      background: transparent;
+      color: var(--text-light);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border-radius: 12px;
+    }
+
+    body.dark-mode {
+      color: var(--text-dark);
+    }
+
+    input[type="text"], input[type="url"], input[type="password"], input[type="number"], select, textarea, .inline-rename-input {
+      user-select: text !important;
+    }
+
+    /* Opaque container to prevent compositor transparency font outline bug */
+    #app-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-main-light);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+      transition: background 0.3s, border 0.3s;
+      position: relative;
+    }
+
+    body.dark-mode #app-container {
+      background: var(--bg-main-dark);
+      border: 1px solid var(--border-dark);
+      color: var(--text-dark);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Programmatic Drag Header */
+    header {
+      height: 50px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-card-light);
+      border-bottom: 1px solid var(--border-light);
+      z-index: 100;
+      cursor: grab;
+    }
+    header:active {
+      cursor: grabbing;
+    }
+
+    body.dark-mode header {
+      background: var(--bg-card-dark);
+      border-bottom: 1px solid var(--border-dark);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--primary-color);
+      pointer-events: none;
+    }
+
+    /* Embedded official carrot-color.svg logo */
+    .brand-logo-svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .window-controls {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    /* Frameless window resize hit-zones (Obsidian-style custom decoration) */
+    .resize-handles {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .resize-handle {
+      position: absolute;
+      pointer-events: auto;
+    }
+    .resize-n  { top: 0; left: 10px; right: 10px; height: 6px; cursor: n-resize; }
+    .resize-s  { bottom: 0; left: 10px; right: 10px; height: 6px; cursor: s-resize; }
+    .resize-e  { right: 0; top: 10px; bottom: 10px; width: 6px; cursor: e-resize; }
+    .resize-w  { left: 0; top: 10px; bottom: 10px; width: 6px; cursor: w-resize; }
+    .resize-ne { top: 0; right: 0; width: 12px; height: 12px; cursor: ne-resize; }
+    .resize-nw { top: 0; left: 0; width: 12px; height: 12px; cursor: nw-resize; }
+    .resize-se { bottom: 0; right: 0; width: 12px; height: 12px; cursor: se-resize; }
+    .resize-sw { bottom: 0; left: 0; width: 12px; height: 12px; cursor: sw-resize; }
+
+    .btn-icon {
+      background: transparent;
+      border: none;
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      color: rgba(0, 0, 0, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body.dark-mode .btn-icon {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .btn-icon:hover {
+      background: rgba(0, 0, 0, 0.06);
+      color: #000;
+      transform: translateY(-1px);
+    }
+
+    body.dark-mode .btn-icon:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    .btn-icon:active {
+      transform: translateY(0);
+    }
+
+    .btn-icon svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .btn-close:hover {
+      background: #ff4d4d !important;
+      color: white !important;
+    }
+
+    /* Navigation Tab Headers */
+    .tabs-bar {
+      display: flex;
+      background: rgba(0, 0, 0, 0.04);
+      border-radius: 8px;
+      padding: 4px;
+      margin: 12px 16px 6px;
+      gap: 4px;
+      border: none;
+    }
+    body.dark-mode .tabs-bar {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 8px 12px;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(0, 0, 0, 0.6);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      text-align: center;
+    }
+    body.dark-mode .tab-btn {
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .tab-btn:hover {
+      color: var(--primary-color);
+      background: rgba(255, 122, 0, 0.08);
+    }
+
+    .tab-btn.active {
+      color: white;
+      background: var(--primary-color);
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+    body.dark-mode .tab-btn.active {
+      color: white;
+      background: var(--primary-color);
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+
+    /* App Tab Container panels */
+    .tab-content {
+      flex: 1;
+      padding: 6px 16px 16px 16px;
+      overflow-y: auto;
+      display: none;
+    }
+
+    .tab-content.active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Note preview cards grid wrapper */
+    .notes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 16px;
+      padding-top: 4px;
+    }
+
+    .note-card-preview {
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 140px;
+      border-left: 4px solid var(--primary-color);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+
+    .note-card-preview:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+    body.dark-mode .note-card-preview {
+      border-color: var(--border-dark);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    body.dark-mode .note-card-preview:hover {
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+
+    .preview-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .status-badge {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .status-badge.active {
+      background: rgba(60, 214, 158, 0.15);
+      color: #034A2E;
+    }
+    .status-badge.archived {
+      background: rgba(0,0,0,0.06);
+      color: #555;
+    }
+    body.dark-mode .status-badge.archived {
+      background: rgba(255,255,255,0.08);
+      color: #aaa;
+    }
+
+    .preview-body {
+      font-family: var(--font-hand);
+      font-size: 16px;
+      line-height: 1.4;
+      flex: 1;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      white-space: pre-wrap;
+      word-break: break-word;
+      opacity: 0.95;
+    }
+
+    .preview-footer {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      border-top: 1px dashed rgba(0, 0, 0, 0.05);
+      padding-top: 8px;
+      margin-top: auto;
+    }
+    body.dark-mode .preview-footer {
+      border-top-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .preview-action-btn {
+      background: transparent;
+      border: none;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      color: rgba(0, 0, 0, 0.4);
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      border-radius: 4px;
+    }
+    body.dark-mode .preview-action-btn {
+      color: rgba(255, 255, 255, 0.4);
+    }
+    .preview-action-btn:hover {
+      color: var(--primary-color);
+      background: rgba(255, 122, 0, 0.08);
+    }
+    .preview-action-btn.delete-btn:hover {
+      color: #ff4d4d;
+      background: rgba(255, 77, 77, 0.08);
+    }
+
+    .pin-card-btn {
+      opacity: 0.3;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .pin-card-btn.pinned {
+      opacity: 1;
+      color: var(--primary-color) !important;
+    }
+    .note-card-preview:hover .pin-card-btn {
+      opacity: 1;
+    }
+
+    /* Colors and Dot Styles */
+    .theme-orange { background: #FFF7EC; border-left-color: #FF9E42; color: #6E3B00; }
+    .theme-yellow { background: #FFFFED; border-left-color: #E6D33C; color: #594D00; }
+    .theme-green { background: #F1FDF8; border-left-color: #3CD69E; color: #045837; }
+    .theme-blue { background: #F1FAFE; border-left-color: #3CB8E6; color: #004D70; }
+    .theme-lavender { background: #FAF3FF; border-left-color: #B069F5; color: #49008E; }
+    .theme-dark { background: #25252C; border-left-color: #5C5C6B; color: #E2E2EA; }
+
+    /* Create New sticky note dashboard button styling */
+    .btn-create-large {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+
+    .btn-create-large:hover {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px var(--primary-glow);
+    }
+    .btn-create-large:active {
+      transform: translateY(0);
+    }
+
+    /* Settings section containers representing premium cards */
+    .settings-card {
+      background: var(--bg-card-light);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    }
+    body.dark-mode .settings-card {
+      background: var(--bg-card-dark);
+      border-color: var(--border-dark);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Preference Options forms */
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--primary-color);
+      margin-bottom: 14px;
+      border-bottom: 1px solid var(--border-light);
+      padding-bottom: 6px;
+    }
+    body.dark-mode .section-title {
+      border-bottom-color: var(--border-dark);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: rgba(0, 0, 0, 0.45);
+    }
+    body.dark-mode .form-group label {
+      color: rgba(255, 255, 255, 0.45);
+    }
+
+    .form-group input, .form-group select {
+      padding: 10px 12px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: var(--font-ui);
+      background-color: var(--bg-main-light);
+      color: inherit;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .form-group select {
+      appearance: none;
+      -webkit-appearance: none;
+      padding: 10px 36px 10px 12px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='rgba(0,0,0,0.5)' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 14px;
+      cursor: pointer;
+    }
+    body.dark-mode .form-group input, body.dark-mode .form-group select {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background-color: var(--bg-main-dark);
+    }
+    body.dark-mode .form-group select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.6)' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    }
+
+    .form-group input:focus, .form-group select:focus {
+      border-color: var(--primary-color);
+      background-color: var(--bg-card-light);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+    body.dark-mode .form-group input:focus, body.dark-mode .form-group select:focus {
+      background-color: var(--bg-card-dark);
+      box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.15);
+    }
+
+    /* Style standard checkboxes in dashboard */
+    input[type="checkbox"]:not(.switch input) {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      outline: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    body.dark-mode input[type="checkbox"]:not(.switch input) {
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+    input[type="checkbox"]:not(.switch input):checked {
+      background-color: var(--primary-color);
+      border-color: var(--primary-color);
+    }
+    input[type="checkbox"]:not(.switch input):checked::after {
+      content: "";
+      width: 4px;
+      height: 8px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+      position: absolute;
+      top: 1px;
+      left: 4px;
+    }
+
+    /* Slider Toggle Styles */
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .toggle-label {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 42px;
+      height: 24px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0, 0, 0, 0.08);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 24px;
+      border: 1px solid rgba(0,0,0,0.02);
+    }
+    body.dark-mode .slider { 
+      background-color: rgba(255, 255, 255, 0.1); 
+      border-color: rgba(255,255,255,0.02);
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 50%;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    }
+    input:checked + .slider { background-color: var(--primary-color); }
+    input:checked + .slider:before { transform: translateX(18px); }
+
+    /* Button and Status Sync */
+    .btn-action-primary {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 13px;
+      box-shadow: 0 4px 10px var(--primary-glow);
+    }
+    .btn-action-primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px var(--primary-glow);
+    }
+    .btn-action-primary:active {
+      transform: translateY(0);
+    }
+
+    .sync-status {
+      font-size: 11px;
+      color: rgba(0,0,0,0.5);
+      text-align: center;
+      margin-top: 8px;
+      font-weight: 500;
+    }
+    body.dark-mode .sync-status { color: rgba(255,255,255,0.5); }
+
+    /* About Graphic center layout */
+    .about-layout {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 16px;
+      padding: 24px 0;
+    }
+
+    .about-logo {
+      width: 80px;
+      height: 80px;
+      filter: drop-shadow(0 4px 10px rgba(255, 122, 0, 0.25));
+    }
+
+    .about-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--primary-color);
+    }
+
+    .about-details {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #555;
+    }
+    body.dark-mode .about-details { color: #ccc; }
+
+    .about-links a {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .about-links a:hover {
+      text-decoration: underline;
+    }
+
+    /* Scrollbars in panels */
+    .tab-content::-webkit-scrollbar {
+      width: 14px;
+    }
+    .tab-content::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .tab-content::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: 7px;
+      border: 4px solid transparent;
+      background-clip: padding-box;
+    }
+    body.dark-mode .tab-content::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border: 4px solid transparent;
+      background-clip: padding-box;
+    }
+    .tab-content::-webkit-scrollbar-thumb:hover {
+      background: var(--primary-color) !important;
+      border: 4px solid transparent;
+      background-clip: padding-box;
+    }
+
+    /* Empty states */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: #888;
+      text-align: center;
+      padding: 48px 32px;
+    }
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      opacity: 0.3;
+      color: var(--primary-color);
+    }
+
+
+
+    /* Inline renaming input for note cards */
+    .inline-rename-input {
+      border: 1px solid var(--primary-color);
+      border-radius: 6px;
+      padding: 4px 6px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.95);
+      color: #333;
+      outline: none;
+      width: 100%;
+      box-shadow: 0 2px 8px var(--primary-glow);
+    }
+    body.dark-mode .inline-rename-input {
+      background: #1e1e24;
+      color: #fff;
+      border-color: var(--primary-color);
+    }
+
+    /* Color Palette Manager styles */
+    .color-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    
+    .color-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      background: var(--bg-main-light);
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      gap: 12px;
+      transition: all 0.2s ease;
+    }
+    body.dark-mode .color-item {
+      background: var(--bg-main-dark);
+      border-color: var(--border-dark);
+    }
+    .color-item:hover {
+      border-color: var(--primary-color);
+    }
+    
+    .color-item-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .color-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .color-preview-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+    }
+    
+    .color-label {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    
+    .color-badge {
+      font-size: 9px;
+      font-weight: 700;
+      color: #777;
+      background: rgba(0, 0, 0, 0.05);
+      padding: 1px 4px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+    body.dark-mode .color-badge {
+      background: rgba(255, 255, 255, 0.08);
+      color: #bbb;
+    }
+    
+    .btn-arrow, .btn-color-delete {
+      background: transparent;
+      border: none;
+      padding: 4px;
+      cursor: pointer;
+      color: rgba(0,0,0,0.4);
+      border-radius: 4px;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-arrow:hover, .btn-color-delete:hover {
+      background: rgba(0, 0, 0, 0.05);
+      color: var(--primary-color);
+    }
+    body.dark-mode .btn-arrow:hover, body.dark-mode .btn-color-delete:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--primary-color);
+    }
+    .btn-color-delete:hover {
+      color: #ff4d4d !important;
+      background: rgba(255, 77, 77, 0.08) !important;
+    }
+    
+    .btn-arrow svg, .btn-color-delete svg {
+      width: 14px;
+      height: 14px;
+    }
+    
+    .add-color-form {
+      padding: 16px;
+      background: rgba(255, 122, 0, 0.03);
+      border: 1px dashed rgba(255, 122, 0, 0.25);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 24px;
+      transition: all 0.3s ease;
+    }
+    body.dark-mode .add-color-form {
+      background: rgba(255, 122, 0, 0.05);
+      border-color: rgba(255, 122, 0, 0.35);
+    }
+    
+    .form-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .form-row .form-group {
+      flex: 1;
+      margin-bottom: 0;
+    }
+    
+    .color-pickers-row {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .color-picker-input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-card-light);
+      padding: 6px 12px;
+      border: 1px solid var(--border-light);
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+    body.dark-mode .color-picker-input-wrapper {
+      background: var(--bg-card-dark);
+      border-color: var(--border-dark);
+    }
+    .color-picker-input-wrapper label {
+      font-size: 9px;
+      font-weight: 700;
+      color: rgba(0, 0, 0, 0.55);
+      letter-spacing: 0.5px;
+    }
+    body.dark-mode .color-picker-input-wrapper label {
+      color: rgba(255, 255, 255, 0.55);
+    }
+    .color-picker-input-wrapper input[type="color"] {
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      border-radius: 50%;
+      cursor: pointer;
+      background: none;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      overflow: hidden;
+    }
+    .color-picker-input-wrapper input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0;
+      border-radius: 50%;
+      overflow: hidden;
+    }
+    .color-picker-input-wrapper input[type="color"]::-webkit-color-swatch {
+      border: none;
+      border-radius: 50%;
+      padding: 0;
+    }
+    
+    /* Hide native select within form group */
+    .form-group select {
+      display: none !important;
+    }
+
+    /* Custom select component styles */
+    .custom-select-container {
+      position: relative;
+      width: 100%;
+    }
+    .custom-select-trigger {
+      padding: 10px 36px 10px 12px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: var(--font-ui);
+      background-color: var(--bg-main-light);
+      color: inherit;
+      outline: none;
+      cursor: pointer;
+      position: relative;
+      user-select: none;
+      transition: all 0.2s;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='rgba%280,0,0,0.5%29' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 14px;
+    }
+    body.dark-mode .custom-select-trigger {
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background-color: var(--bg-main-dark);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='rgba%28255,255,255,0.6%29' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    }
+    .custom-select-container.active .custom-select-trigger {
+      border-color: var(--primary-color);
+      background-color: var(--bg-card-light);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+    body.dark-mode .custom-select-container.active .custom-select-trigger {
+      background-color: var(--bg-card-dark);
+      box-shadow: 0 0 0 3px rgba(255, 122, 0, 0.15);
+    }
+    .custom-select-options {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      padding: 6px;
+      max-height: 200px;
+      overflow-y: auto;
+      animation: dropdownFadeIn 0.15s ease-out;
+    }
+    body.dark-mode .custom-select-options {
+      background: rgba(45, 45, 53, 0.95);
+      border-color: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+    .custom-select-options.show {
+      display: block;
+    }
+    .custom-select-option {
+      padding: 8px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 6px;
+      color: inherit;
+      transition: background 0.15s, color 0.15s;
+    }
+    .custom-select-option:hover {
+      background: rgba(255, 122, 0, 0.1);
+      color: var(--primary-color);
+    }
+    body.dark-mode .custom-select-option:hover {
+      background: rgba(255, 122, 0, 0.15);
+      color: #ff9d42;
+    }
+    .custom-select-option.selected {
+      font-weight: 700;
+      background: var(--primary-color);
+      color: white !important;
+    }
+    
+    /* Disabled Custom Select */
+    .custom-select-container.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .custom-select-container.disabled .custom-select-trigger {
+      background: var(--bg-card-light) !important;
+      cursor: not-allowed;
+    }
+    body.dark-mode .custom-select-container.disabled .custom-select-trigger {
+      background: var(--bg-card-dark) !important;
+    }
+    
+    /* Custom Number Input Spinners */
+    .number-input-container {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      width: 100%;
+    }
+    .number-input-container input[type="number"] {
+      width: 100%;
+      padding-right: 32px !important;
+      -webkit-appearance: none;
+      appearance: none;
+      -moz-appearance: textfield;
+    }
+    .number-input-container input[type="number"]::-webkit-outer-spin-button,
+    .number-input-container input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .spinner-arrows {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      height: 28px;
+      width: 20px;
+      gap: 2px;
+      z-index: 10;
+    }
+    .spinner-arrow {
+      height: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(0, 0, 0, 0.45);
+      background: rgba(0, 0, 0, 0.04);
+      border-radius: 4px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+    body.dark-mode .spinner-arrow {
+      color: rgba(255, 255, 255, 0.55);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .spinner-arrow:hover {
+      background: var(--primary-color) !important;
+      color: white !important;
+    }
+    .spinner-arrow:active {
+      transform: scale(0.9);
+    }
+    .spinner-arrow svg {
+      width: 8px;
+      height: 8px;
+      stroke-width: 3.5;
+      color: inherit;
+    }
+    .number-input-container input:disabled + .spinner-arrows {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    
+    /* Disabled settings states */
+    input:disabled, select:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background: var(--bg-card-light) !important;
+    }
+    body.dark-mode input:disabled, body.dark-mode select:disabled {
+      background: var(--bg-card-dark) !important;
+    }
+    .btn-action-primary:disabled, .btn-action-primary.disabled-btn {
+      opacity: 0.4 !important;
+      pointer-events: none !important;
+      cursor: not-allowed !important;
+    }
+    
+    /* Custom Modal Dialog Box Overlay */
+    .custom-dialog-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      animation: dialogFadeIn 0.2s ease-out;
+    }
+    .custom-dialog-box {
+      background: var(--bg-card-light);
+      border: 1px solid var(--border-light);
+      border-radius: 12px;
+      padding: 20px;
+      width: 320px;
+      max-width: 90%;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      animation: dialogScaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    body.dark-mode .custom-dialog-box {
+      background: var(--bg-card-dark);
+      border-color: var(--border-dark);
+    }
+    .custom-dialog-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .custom-dialog-message {
+      font-size: 13px;
+      color: inherit;
+      margin-bottom: 20px;
+      line-height: 1.5;
+      opacity: 0.85;
+    }
+    .custom-dialog-buttons {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    .btn-dialog-primary {
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-dialog-primary:hover {
+      opacity: 0.9;
+    }
+    .btn-dialog-secondary {
+      background: transparent;
+      border: 1px solid var(--border-light);
+      color: inherit;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      opacity: 0.8;
+    }
+    body.dark-mode .btn-dialog-secondary {
+      border-color: var(--border-dark);
+    }
+    .btn-dialog-secondary:hover {
+      background: rgba(0, 0, 0, 0.05);
+      opacity: 1;
+    }
+    body.dark-mode .btn-dialog-secondary:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    @keyframes dialogFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes dialogScaleIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    /* Layout split folders */
+    .sync-type-section {
+      background: var(--bg-card-light);
+      border: 1px solid var(--border-light);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    body.dark-mode .sync-type-section {
+      background: var(--bg-card-dark);
+      border-color: var(--border-dark);
+    }
+    .sync-type-title {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--primary-color);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    /* Previews label details */
+    .preview-details {
+      font-size: 11px;
+      opacity: 0.6;
+      margin-top: 2px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app-container">
+
+    <div class="resize-handles" aria-hidden="true">
+      <div class="resize-handle resize-n" data-dir="North"></div>
+      <div class="resize-handle resize-s" data-dir="South"></div>
+      <div class="resize-handle resize-e" data-dir="East"></div>
+      <div class="resize-handle resize-w" data-dir="West"></div>
+      <div class="resize-handle resize-ne" data-dir="NorthEast"></div>
+      <div class="resize-handle resize-nw" data-dir="NorthWest"></div>
+      <div class="resize-handle resize-se" data-dir="SouthEast"></div>
+      <div class="resize-handle resize-sw" data-dir="SouthWest"></div>
+    </div>
+    
+    <!-- Custom Draggable Header -->
+    <header id="drag-header">
+      <div class="brand">
+        <!-- Inlined official carrot-color.svg vector logo -->
+        <svg viewBox="0 0 285.75 285.75" class="brand-logo-svg">
+          <defs>
+            <linearGradient id="swatch3_header">
+              <stop style="stop-color:#f06e10;stop-opacity:1;" offset="0" />
+            </linearGradient>
+            <linearGradient id="linearGradient3_header" x1="56.256714" y1="137.34169" x2="153.88815" y2="137.34169" gradientUnits="userSpaceOnUse" xlink:href="#swatch3_header"/>
+          </defs>
+          <g transform="matrix(0.54256154,0.54256154,-0.54256154,0.54256154,129.04136,42.770433)">
+            <path style="display:inline;fill:#b6530c;fill-opacity:1;stroke:none;stroke-width:0.40573" d="m 62.478393,4.0213842 c 5.207277,-30.5528772 79.251097,-30.5528772 85.059297,0 C 153.34589,34.57426 124.52265,268.03586 105.00804,268.56676 85.493432,269.09767 57.271116,34.57426 62.478393,4.0213842 Z" />
+            <path style="display:inline;fill:url(#linearGradient3_header);stroke:none;stroke-width:0.45607" d="m 104.74658,-24.222294 c -22.355474,0 -44.626488,8.586261 -47.553172,25.7581176 C 51.34004,35.879535 83.063916,299.50101 104.99979,298.90424 126.93567,298.30747 159.33554,35.879535 152.80669,1.5358236 149.54227,-15.636033 127.10205,-24.222294 104.74658,-24.222294 Z M 67.650651,4.3651082 C 77.210394,7.9256279 92.857482,9.686846 103.16218,10.001973 96.123572,15.912061 73.144846,12.665964 67.650651,4.3651082 Z m 76.313689,6.9158568 c -5.49419,8.300856 -28.47292,11.546952 -35.51153,5.636865 10.3047,-0.315128 25.95179,-2.076345 35.51153,-5.636865 z M 75.206779,36.42465 c 7.155073,2.722973 18.888123,4.128427 26.619561,4.419885 C 96.51272,45.242186 79.285593,42.6833 75.206779,36.42465 Z m 59.731241,21.683948 c -4.07881,6.25865 -21.30595,8.817536 -26.61957,4.419885 7.73144,-0.291458 19.4645,-1.696912 26.61957,-4.419885 z M 70.301652,74.199089 c 7.155073,2.722973 18.888123,4.128427 26.619564,4.419885 -5.313623,4.397651 -22.54075,1.838765 -26.619564,-4.419885 z m 55.281378,30.055531 c -4.07881,6.25865 -21.30594,8.81753 -26.619562,4.41988 7.731442,-0.29146 19.464492,-1.6969 26.619562,-4.41988 z m -43.884141,36.01124 c 7.155073,2.72297 18.888111,4.12842 26.619561,4.41988 -5.31363,4.39765 -22.540747,1.83877 -26.619561,-4.41988 z m 41.822251,36.01072 c -4.00748,5.61374 -21.3144,7.56065 -26.86244,2.55798 7.61419,0.79608 19.31501,-0.85607 26.86244,-2.55798 z M 94.635567,210.8786 c 5.549253,2.03359 14.693583,2.34999 20.728453,1.9327 -4.21455,4.82203 -17.633561,3.86876 -20.728453,-1.9327 z" />
+            <g style="display:inline">
+              <path style="fill:#0c7707;fill-opacity:1;stroke:none;stroke-width:1.35629" d="m 105.07246,-112.50461 c 29.91292,-0.0481 12.59736,88.041022 0,87.421952 -12.59734,-0.619072 -29.91289,-87.373772 0,-87.421952 z" />
+              <path style="fill:#0a6306;fill-opacity:1;stroke:none;stroke-width:1.35629" d="m 139.74168,-105.33627 c 27.47923,11.818516 -23.35031,85.817699 -34.66922,80.253612 -11.31889,-5.564081 7.19,-92.072042 34.66922,-80.253612 z" />
+              <path style="fill:#0a6306;fill-opacity:1;stroke:none;stroke-width:1.35629" d="m 70.403244,-105.33627 c -27.47923,11.818518 23.350309,85.817702 34.669216,80.253612 11.31889,-5.56408 -7.189997,-92.072042 -34.669216,-80.253612 z" />
+            </g>
+          </g>
+        </svg>
+        <span>CarrotNotes</span>
+      </div>
+
+      <div class="window-controls">
+        <!-- Minimize -->
+        <button id="min-btn" class="btn-icon no-drag" title="Minimize">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+
+        <!-- Hide/Close to Tray -->
+        <button id="close-btn" class="btn-icon btn-close no-drag" title="Close to Tray">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs-bar">
+      <button class="tab-btn active" onclick="switchTab('tab-notes')">My Notes</button>
+      <button class="tab-btn" onclick="switchTab('tab-sync')">Sync & Cloud</button>
+      <button class="tab-btn" onclick="switchTab('tab-preferences')">Preferences</button>
+      <button class="tab-btn" onclick="switchTab('tab-about')">About</button>
+    </div>
+
+    <!-- TAB 1: My Notes board -->
+    <div id="tab-notes" class="tab-content active">
+      <button class="btn-create-large" onclick="createNewNote()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        <span>Create Sticky Note</span>
+      </button>
+
+      <!-- Pinned Notes Section -->
+      <div id="pinned-section" style="display: none; margin-bottom: 24px;">
+        <div class="section-title" style="margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="currentColor" stroke-width="1">
+            <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"></path>
+          </svg>
+          <span>Pinned Notes</span>
+        </div>
+        <div id="pinned-notes-list" class="notes-grid" style="margin-bottom: 16px;">
+          <!-- Pinned previews load dynamically -->
+        </div>
+      </div>
+
+      <!-- Recent/Other Notes Section -->
+      <div id="recent-section">
+        <div class="section-title" id="recent-notes-title" style="margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span>Recent Notes</span>
+        </div>
+        <div id="notes-list" class="notes-grid">
+          <!-- Recent previews load dynamically -->
+        </div>
+      </div>
+
+      <div id="empty-state" class="empty-state" style="display: none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+        </svg>
+        <p>No sticky notes found. Create one above to start!</p>
+      </div>
+    </div>
+
+    <!-- TAB 2: Sync & Cloud pane -->
+    <div id="tab-sync" class="tab-content">
+      
+      <!-- Local Directory Sync -->
+      <div class="settings-card">
+        <div class="section-title">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+          <span>Local Folder Sync</span>
+        </div>
+        
+        <div class="toggle-container">
+          <span class="toggle-label">Enable Local Sync</span>
+          <label class="switch">
+            <input type="checkbox" id="local-sync-toggle" onchange="saveSettings()">
+            <span class="slider"></span>
+          </label>
+        </div>
+        
+        <div class="form-group">
+          <label>SYNC DIRECTORY PATH (e.g. ~/Documents/CarrotNotes)</label>
+          <input type="text" id="local-sync-dir" placeholder="/absolute/path/to/folder" oninput="saveSettings()" />
+        </div>
+        
+        <div class="form-group">
+          <label>SYNC TRIGGER MODE</label>
+          <select id="local-sync-mode" onchange="saveSettings()">
+            <option value="manual">Manual Only</option>
+            <option value="on_save">On Note Save</option>
+            <option value="scheduled">Scheduled / Interval</option>
+          </select>
+        </div>
+        
+        <div class="form-group" id="local-interval-group" style="display:none;">
+          <label>SCHEDULED SYNC INTERVAL (SECONDS)</label>
+          <div class="number-input-container">
+            <input type="number" id="local-sync-interval" min="5" value="60" oninput="saveSettings()" />
+            <div class="spinner-arrows">
+              <div class="spinner-arrow up" onclick="stepUp('local-sync-interval')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="18 15 12 9 6 15"></polyline></svg></div>
+              <div class="spinner-arrow down" onclick="stepDown('local-sync-interval')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+            </div>
+          </div>
+        </div>
+        
+        <button onclick="syncLocalNow()" class="btn-action-primary">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          <span>Sync Folder Now</span>
+        </button>
+        
+        <div id="local-sync-status" class="sync-status">Status: Standby</div>
+      </div>
+      
+      <!-- Cloud Server Sync -->
+      <div class="settings-card">
+        <div class="section-title">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+            <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+          </svg>
+          <span>Cloud Server Sync</span>
+        </div>
+        
+        <div class="toggle-container">
+          <span class="toggle-label">Enable Cloud Sync</span>
+          <label class="switch">
+            <input type="checkbox" id="cloud-sync-toggle" onchange="saveSettings()">
+            <span class="slider"></span>
+          </label>
+        </div>
+        
+        <div class="form-group">
+          <label>API ENDPOINT URL</label>
+          <input type="url" id="cloud-sync-endpoint" placeholder="https://api.example.com/sync" oninput="saveSettings()" />
+        </div>
+        
+        <div class="form-group">
+          <label>AUTHENTICATION TOKEN</label>
+          <input type="password" id="cloud-sync-token" placeholder="Bearer auth token" oninput="saveSettings()" />
+        </div>
+        
+        <div class="form-group">
+          <label>SYNC TRIGGER MODE</label>
+          <select id="cloud-sync-mode" onchange="saveSettings()">
+            <option value="manual">Manual Only</option>
+            <option value="on_save">On Note Save</option>
+            <option value="scheduled">Scheduled / Interval</option>
+          </select>
+        </div>
+        
+        <div class="form-group" id="cloud-interval-group" style="display:none;">
+          <label>SCHEDULED SYNC INTERVAL (SECONDS)</label>
+          <div class="number-input-container">
+            <input type="number" id="cloud-sync-interval" min="5" value="60" oninput="saveSettings()" />
+            <div class="spinner-arrows">
+              <div class="spinner-arrow up" onclick="stepUp('cloud-sync-interval')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="18 15 12 9 6 15"></polyline></svg></div>
+              <div class="spinner-arrow down" onclick="stepDown('cloud-sync-interval')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+            </div>
+          </div>
+        </div>
+        
+        <button onclick="syncCloudNow()" class="btn-action-primary">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+          <span>Sync Cloud Now</span>
+        </button>
+        
+        <div id="cloud-sync-status" class="sync-status">Status: Standby</div>
+      </div>
+      
+    </div>
+
+    <!-- TAB 3: Preferences pane -->
+    <div id="tab-preferences" class="tab-content">
+      
+      <!-- Dashboard Settings Card -->
+      <div class="settings-card">
+        <div class="section-title">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span>Dashboard Settings</span>
+        </div>
+        
+        <div class="toggle-container" style="margin-bottom: 0;">
+          <span class="toggle-label">Enable Dark Mode Dashboard</span>
+          <label class="switch">
+            <input type="checkbox" id="darkmode-toggle" onchange="saveSettings()">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Default Note Formatting Card -->
+      <div class="settings-card">
+        <div class="section-title">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          <span>Default Note Formatting</span>
+        </div>
+        
+        <div class="toggle-container">
+          <span class="toggle-label">Enable Strict Read-Only Mode</span>
+          <label class="switch">
+            <input type="checkbox" id="strict-readonly-toggle" onchange="saveSettings()">
+            <span class="slider"></span>
+          </label>
+        </div>
+        
+        <div class="toggle-container">
+          <span class="toggle-label">Enable Default Read-Only Mode</span>
+          <label class="switch">
+            <input type="checkbox" id="default-readonly-toggle" onchange="saveSettings()">
+            <span class="slider"></span>
+          </label>
+        </div>
+        
+        <div class="toggle-container">
+          <span class="toggle-label">Enable Note Autosave</span>
+          <label class="switch">
+            <input type="checkbox" id="autosave-toggle" onchange="saveSettings()">
+            <span class="slider"></span>
+          </label>
+        </div>
+        
+        <div class="form-group" id="autosave-interval-group">
+          <label>AUTOSAVE ON CHANGE DELAY (SECONDS)</label>
+          <div class="number-input-container">
+            <input type="number" id="autosave-interval" min="1" value="5" oninput="saveSettings()" />
+            <div class="spinner-arrows">
+              <div class="spinner-arrow up" onclick="stepUp('autosave-interval')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="18 15 12 9 6 15"></polyline></svg></div>
+              <div class="spinner-arrow down" onclick="stepDown('autosave-interval')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>DEFAULT WIDTH (PX)</label>
+            <div class="number-input-container">
+              <input type="number" id="default-width" min="150" max="1000" value="280" oninput="saveSettings()" />
+              <div class="spinner-arrows">
+                <div class="spinner-arrow up" onclick="stepUp('default-width')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="18 15 12 9 6 15"></polyline></svg></div>
+                <div class="spinner-arrow down" onclick="stepDown('default-width')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>DEFAULT HEIGHT (PX)</label>
+            <div class="number-input-container">
+              <input type="number" id="default-height" min="150" max="1000" value="300" oninput="saveSettings()" />
+              <div class="spinner-arrows">
+                <div class="spinner-arrow up" onclick="stepUp('default-height')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="18 15 12 9 6 15"></polyline></svg></div>
+                <div class="spinner-arrow down" onclick="stepDown('default-height')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-row" style="margin-top: 12px;">
+          <div class="form-group">
+            <label>DEFAULT FONT FAMILY</label>
+            <select id="default-font-family" onchange="saveSettings()">
+              <option value="Caveat">Handwriting</option>
+              <option value="Inter">Inter (UI)</option>
+              <option value="Roboto">Roboto</option>
+              <option value="Courier Prime">Monospace</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>DEFAULT FONT SIZE</label>
+            <select id="default-font-size" onchange="saveSettings()">
+              <option value="14px">14px</option>
+              <option value="16px">16px</option>
+              <option value="18px">18px</option>
+              <option value="20px">20px</option>
+              <option value="22px">22px</option>
+              <option value="24px">24px</option>
+              <option value="28px">28px</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Custom Fonts & Sizes Manager Card -->
+      <div class="settings-card">
+        <div class="section-title">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+            <polyline points="4 7 4 4 20 4 20 7"></polyline>
+            <line x1="9" y1="20" x2="15" y2="20"></line>
+            <line x1="12" y1="4" x2="12" y2="20"></line>
+          </svg>
+          <span>Custom Fonts & Sizes</span>
+        </div>
+        
+        <!-- Add Custom Font -->
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--primary-color); margin-bottom: 8px;">Add Custom Font Family</div>
+        <div class="form-row" style="margin-bottom: 16px;">
+          <div class="form-group" style="flex: 2;">
+            <input type="text" id="new-font-name" placeholder="E.g. Fira Code" />
+          </div>
+          <button onclick="addCustomFont()" class="btn-action-primary" style="padding: 10px 16px;">
+            Add Font
+          </button>
+        </div>
+        
+        <!-- Add Custom Font Size -->
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--primary-color); margin-bottom: 8px;">Add Custom Font Size</div>
+        <div class="form-row" style="margin-bottom: 20px;">
+          <div class="form-group" style="flex: 2;">
+            <input type="text" id="new-font-size" placeholder="E.g. 15px or 15" />
+          </div>
+          <button onclick="addCustomFontSize()" class="btn-action-primary" style="padding: 10px 16px;">
+            Add Size
+          </button>
+        </div>
+        
+        <!-- Custom Fonts & Sizes Lists -->
+        <div class="form-row" style="align-items: flex-start; gap: 16px;">
+          <div class="form-group" style="flex: 1; margin-bottom: 0;">
+            <label style="margin-bottom: 6px;">Custom Fonts List</label>
+            <div id="custom-fonts-manager-list" class="color-list" style="margin-top: 0; gap: 6px;"></div>
+          </div>
+          <div class="form-group" style="flex: 1; margin-bottom: 0;">
+            <label style="margin-bottom: 6px;">Custom Sizes List</label>
+            <div id="custom-sizes-manager-list" class="color-list" style="margin-top: 0; gap: 6px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Note Colors Board Card -->
+      <div class="settings-card">
+        <div class="section-title">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+            <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 14.7255 3.09032 17.1962 4.85857 19C5.03454 19.176 5.2824 19.2477 5.5186 19.1906C6.18378 19.03 6.88007 18.94 7.6 18.94C10.03 18.94 12 20.91 12 23.34V22Z"></path>
+            <circle cx="7.5" cy="10.5" r="1.5"></circle>
+            <circle cx="11.5" cy="7.5" r="1.5"></circle>
+            <circle cx="16.5" cy="9.5" r="1.5"></circle>
+            <circle cx="15.5" cy="14.5" r="1.5"></circle>
+          </svg>
+          <span>Note Colors Board</span>
+        </div>
+        
+        <div class="add-color-form">
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--primary-color);">Create Custom Color</div>
+          <div class="form-row">
+            <div class="form-group">
+              <input type="text" id="new-color-name" placeholder="E.g. Rose Gold" />
+            </div>
+          </div>
+          <div class="color-pickers-row">
+            <div class="color-picker-input-wrapper">
+              <label>BACKGROUND</label>
+              <input type="color" id="new-color-bg" value="#FFE4E1" />
+            </div>
+            <div class="color-picker-input-wrapper">
+              <label>TEXT</label>
+              <input type="color" id="new-color-text" value="#000000" />
+            </div>
+            <button onclick="addCustomColor()" class="btn-action-primary" style="padding: 6px 12px; font-size: 11px;">
+              Add Color
+            </button>
+          </div>
+        </div>
+        
+        <div id="color-manager-list" class="color-list">
+          <!-- Filled dynamically -->
+        </div>
+      </div>
+      
+    </div>
+
+    <!-- TAB 4: About pane -->
+    <div id="tab-about" class="tab-content">
+      <div class="about-layout">
+        <!-- Inlined official carrot-color.svg vector logo in center -->
+        <svg viewBox="0 0 285.75 285.75" class="about-logo">
+          <defs>
+            <linearGradient id="swatch3_about">
+              <stop style="stop-color:#f06e10;stop-opacity:1;" offset="0" />
+            </linearGradient>
+            <linearGradient id="linearGradient3_about" x1="56.256714" y1="137.34169" x2="153.88815" y2="137.34169" gradientUnits="userSpaceOnUse" xlink:href="#swatch3_about"/>
+          </defs>
+          <g transform="matrix(0.54256154,0.54256154,-0.54256154,0.54256154,129.04136,42.770433)">
+            <path style="display:inline;fill:#b6530c;fill-opacity:1;stroke:none;stroke-width:0.40573" d="m 62.478393,4.0213842 c 5.207277,-30.5528772 79.251097,-30.5528772 85.059297,0 C 153.34589,34.57426 124.52265,268.03586 105.00804,268.56676 85.493432,269.09767 57.271116,34.57426 62.478393,4.0213842 Z" />
+            <path style="display:inline;fill:url(#linearGradient3_about);stroke:none;stroke-width:0.45607" d="m 104.74658,-24.222294 c -22.355474,0 -44.626488,8.586261 -47.553172,25.7581176 C 51.34004,35.879535 83.063916,299.50101 104.99979,298.90424 126.93567,298.30747 159.33554,35.879535 152.80669,1.5358236 149.54227,-15.636033 127.10205,-24.222294 104.74658,-24.222294 Z M 67.650651,4.3651082 C 77.210394,7.9256279 92.857482,9.686846 103.16218,10.001973 96.123572,15.912061 73.144846,12.665964 67.650651,4.3651082 Z m 76.313689,6.9158568 c -5.49419,8.300856 -28.47292,11.546952 -35.51153,5.636865 10.3047,-0.315128 25.95179,-2.076345 35.51153,-5.636865 z M 75.206779,36.42465 c 7.155073,2.722973 18.888123,4.128427 26.619561,4.419885 C 96.51272,45.242186 79.285593,42.6833 75.206779,36.42465 Z m 59.731241,21.683948 c -4.07881,6.25865 -21.30595,8.817536 -26.61957,4.419885 7.73144,-0.291458 19.4645,-1.696912 26.61957,-4.419885 z M 70.301652,74.199089 c 7.155073,2.722973 18.888123,4.128427 26.619564,4.419885 -5.313623,4.397651 -22.54075,1.838765 -26.619564,-4.419885 z m 55.281378,30.055531 c -4.07881,6.25865 -21.30594,8.81753 -26.619562,4.41988 7.731442,-0.29146 19.464492,-1.6969 26.619562,-4.41988 z m -43.884141,36.01124 c 7.155073,2.72297 18.888111,4.12842 26.619561,4.41988 -5.31363,4.39765 -22.540747,1.83877 -26.619561,-4.41988 z m 41.822251,36.01072 c -4.00748,5.61374 -21.3144,7.56065 -26.86244,2.55798 7.61419,0.79608 19.31501,-0.85607 26.86244,-2.55798 z M 94.635567,210.8786 c 5.549253,2.03359 14.693583,2.34999 20.728453,1.9327 -4.21455,4.82203 -17.633561,3.86876 -20.728453,-1.9327 z" />
+            <g style="display:inline">
+              <path style="fill:#0c7707;fill-opacity:1;stroke:none;stroke-width:1.35629" d="m 105.07246,-112.50461 c 29.91292,-0.0481 12.59736,88.041022 0,87.421952 -12.59734,-0.619072 -29.91289,-87.373772 0,-87.421952 z" />
+              <path style="fill:#0a6306;fill-opacity:1;stroke:none;stroke-width:1.35629" d="m 139.74168,-105.33627 c 27.47923,11.818516 -23.35031,85.817699 -34.66922,80.253612 -11.31889,-5.564081 7.19,-92.072042 34.66922,-80.253612 z" />
+              <path style="fill:#0a6306;fill-opacity:1;stroke:none;stroke-width:1.35629" d="m 70.403244,-105.33627 c -27.47923,11.818518 23.350309,85.817702 34.669216,80.253612 11.31889,-5.56408 -7.189997,-92.072042 -34.669216,-80.253612 z" />
+            </g>
+          </g>
+        </svg>
+
+        <div class="about-title">CarrotNotes</div>
+        <div class="about-details">
+          <strong>Version:</strong> 2.1.0 (Wayland Edition)<br/>
+          <strong>Author:</strong> Shaker Br<br/>
+          <strong>Email:</strong> <a href="mailto:shbhky@gmail.com">shbhky@gmail.com</a>
+        </div>
+        <div class="about-links">
+          <a href="https://github.com/shakerbr" target="_blank">Visit GitHub Project</a>
+        </div>
+      </div>
+    </div>
+
+
+
+  </div>
+
+  <script>
+    const invoke = window.__TAURI__ ? window.__TAURI__.core.invoke : null;
+    const listen = window.__TAURI__ ? window.__TAURI__.event.listen : null;
+    const { getCurrentWindow } = window.__TAURI__ ? window.__TAURI__.window : { getCurrentWindow: null };
+
+    let notes = [];
+    let appWindow = null;
+    let localSyncTimer = null;
+    let cloudSyncTimer = null;
+
+    let settings = {
+      theme: "light",
+      defaultSize: { width: 280, height: 300 },
+      defaultFont: { family: "Caveat", size: "20px" },
+      defaultColor: "theme-orange",
+      autosave: true,
+      autosaveInterval: 5,
+      readOnlyMode: false,
+      defaultReadOnly: false,
+      customFonts: [],
+      customFontSizes: [],
+      colors: [
+        { id: "theme-orange", name: "Carrot Orange", bg: "#FFF2E6", text: "#5C2D00", dot: "#FF9E42", isBuiltIn: true, enabled: true },
+        { id: "theme-yellow", name: "Soft Yellow", bg: "#FFFDE6", text: "#4A4000", dot: "#E6D33C", isBuiltIn: true, enabled: true },
+        { id: "theme-green", name: "Mint Green", bg: "#EAFDF5", text: "#034A2E", dot: "#3CD69E", isBuiltIn: true, enabled: true },
+        { id: "theme-blue", name: "Ice Blue", bg: "#EAF9FF", text: "#003F5C", dot: "#3CB8E6", isBuiltIn: true, enabled: true },
+        { id: "theme-lavender", name: "Lavender Purple", bg: "#F9EFFF", text: "#38006E", dot: "#B069F5", isBuiltIn: true, enabled: true },
+        { id: "theme-dark", name: "Clean Dark Gray", bg: "#2D2D35", text: "#E2E2EA", dot: "#5C5C6B", isBuiltIn: true, enabled: true }
+      ],
+      localSync: {
+        enabled: false,
+        dir: "",
+        mode: "manual",
+        interval: 60
+      },
+      cloudSync: {
+        enabled: false,
+        endpoint: "",
+        token: "",
+        mode: "manual",
+        interval: 60
+      }
+    };
+
+    if (getCurrentWindow) {
+      appWindow = getCurrentWindow();
+    }
+
+    // Initialize Dashboard UI
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Setup programmatic dragging listener to fix Wayland borderless dragging
+      if (appWindow) {
+        document.getElementById('drag-header').addEventListener('mousedown', (e) => {
+          if (!e.target.closest('.no-drag')) {
+            appWindow.startDragging();
+          }
+        });
+
+        setupResizeHandles(document.getElementById('app-container'));
+      }
+
+      // 3. Load Settings from Rust & populate UI
+      loadSettings().then(() => {
+        // 4. Load all notes and spawn previously open notes
+        loadAllNotes(true); // openPrevious = true
+      });
+
+      // 5. Watch for changes from other windows
+      if (listen) {
+        listen('notes-changed', () => {
+          loadAllNotes(false); // reload but don't reopen (already open)
+        });
+        
+        listen('create-note', () => {
+          createNewNote();
+        });
+
+        listen('settings-changed', () => {
+          loadSettings();
+        });
+      }
+    });
+
+    // Window controls
+    document.getElementById('min-btn').addEventListener('click', () => {
+      if (appWindow) appWindow.minimize();
+    });
+
+    document.getElementById('close-btn').addEventListener('click', () => {
+      if (appWindow) appWindow.close(); // hides to system tray in Rust
+    });
+
+    function setupResizeHandles(containerEl) {
+      if (!appWindow || !containerEl) return;
+      containerEl.querySelectorAll('.resize-handle').forEach(handle => {
+        handle.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          appWindow.startResizeDragging(handle.dataset.dir);
+        });
+      });
+    }
+
+    // Tab switcher
+    window.switchTab = function(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+
+      document.getElementById(tabId).classList.add('active');
+      event.target.classList.add('active');
+    };
+
+    // Load Settings
+    async function loadSettings() {
+      if (invoke) {
+        try {
+          const sJson = await invoke('load_settings');
+          const loaded = JSON.parse(sJson);
+          
+          // Merge objects
+          if (loaded.colors) {
+            settings = { ...settings, ...loaded };
+          } else {
+            // Keep default colors if empty/null
+            settings = { ...settings, ...loaded, colors: settings.colors };
+          }
+        } catch(e) {
+          console.error("Failed to load settings:", e);
+        }
+      } else {
+        const sJson = localStorage.getItem('carrotnotes_settings');
+        if (sJson) {
+          try { settings = JSON.parse(sJson); } catch(e){}
+        }
+      }
+      
+      // Apply theme
+      if (settings.theme === 'dark') {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+      }
+      
+      populateSettingsUI();
+      startSyncSchedulers();
+    }
+
+    function populateSettingsUI() {
+      // Appearance
+      document.getElementById('darkmode-toggle').checked = settings.theme === 'dark';
+      
+      // Default note formatting
+      document.getElementById('strict-readonly-toggle').checked = settings.readOnlyMode;
+      document.getElementById('default-readonly-toggle').checked = settings.defaultReadOnly || false;
+      document.getElementById('autosave-toggle').checked = settings.autosave;
+      document.getElementById('autosave-interval').value = settings.autosaveInterval;
+      document.getElementById('default-width').value = settings.defaultSize.width;
+      document.getElementById('default-height').value = settings.defaultSize.height;
+      
+      // Rebuild and sync custom fonts select elements
+      rebuildUIFontSelects();
+      
+      // Local Sync Settings
+      document.getElementById('local-sync-toggle').checked = settings.localSync.enabled;
+      document.getElementById('local-sync-dir').value = settings.localSync.dir || '';
+      document.getElementById('local-sync-mode').value = settings.localSync.mode;
+      document.getElementById('local-sync-interval').value = settings.localSync.interval;
+      
+      // Cloud Sync Settings
+      document.getElementById('cloud-sync-toggle').checked = settings.cloudSync.enabled;
+      document.getElementById('cloud-sync-endpoint').value = settings.cloudSync.endpoint || '';
+      document.getElementById('cloud-sync-token').value = settings.cloudSync.token || '';
+      document.getElementById('cloud-sync-mode').value = settings.cloudSync.mode;
+      document.getElementById('cloud-sync-interval').value = settings.cloudSync.interval;
+      
+      updateIntervalVisibility();
+      updateSyncDisabledStates();
+      renderColorManager();
+      renderCustomFontsAndSizes();
+    }
+
+    function updateSyncDisabledStates() {
+      const localEnabled = document.getElementById('local-sync-toggle').checked;
+      document.getElementById('local-sync-dir').disabled = !localEnabled;
+      document.getElementById('local-sync-mode').disabled = !localEnabled;
+      document.getElementById('local-sync-interval').disabled = !localEnabled;
+      const localBtn = document.querySelector('button[onclick="syncLocalNow()"]');
+      if (localBtn) {
+        localBtn.disabled = !localEnabled;
+        localBtn.classList.toggle('disabled-btn', !localEnabled);
+      }
+
+      const cloudEnabled = document.getElementById('cloud-sync-toggle').checked;
+      document.getElementById('cloud-sync-endpoint').disabled = !cloudEnabled;
+      document.getElementById('cloud-sync-token').disabled = !cloudEnabled;
+      document.getElementById('cloud-sync-mode').disabled = !cloudEnabled;
+      document.getElementById('cloud-sync-interval').disabled = !cloudEnabled;
+      const cloudBtn = document.querySelector('button[onclick="syncCloudNow()"]');
+      if (cloudBtn) {
+        cloudBtn.disabled = !cloudEnabled;
+        cloudBtn.classList.toggle('disabled-btn', !cloudEnabled);
+      }
+      if (window.initCustomSelects) {
+        window.initCustomSelects();
+      }
+    }
+
+    function updateIntervalVisibility() {
+      const localMode = document.getElementById('local-sync-mode').value;
+      document.getElementById('local-interval-group').style.display = localMode === 'scheduled' ? 'block' : 'none';
+      
+      const cloudMode = document.getElementById('cloud-sync-mode').value;
+      document.getElementById('cloud-interval-group').style.display = cloudMode === 'scheduled' ? 'block' : 'none';
+      
+      const autosave = document.getElementById('autosave-toggle').checked;
+      document.getElementById('autosave-interval-group').style.display = autosave ? 'block' : 'none';
+    }
+
+    function readSettingsFromUI() {
+      settings.theme = document.getElementById('darkmode-toggle').checked ? 'dark' : 'light';
+      settings.readOnlyMode = document.getElementById('strict-readonly-toggle').checked;
+      settings.defaultReadOnly = document.getElementById('default-readonly-toggle').checked;
+      settings.autosave = document.getElementById('autosave-toggle').checked;
+      settings.autosaveInterval = parseInt(document.getElementById('autosave-interval').value, 10) || 5;
+      settings.defaultSize.width = parseInt(document.getElementById('default-width').value, 10) || 280;
+      settings.defaultSize.height = parseInt(document.getElementById('default-height').value, 10) || 300;
+      settings.defaultFont.family = document.getElementById('default-font-family').value;
+      settings.defaultFont.size = document.getElementById('default-font-size').value;
+      
+      // Determine default color based on ordering (first enabled color in list)
+      const firstActiveColor = settings.colors.find(c => c.enabled) || settings.colors[0];
+      settings.defaultColor = firstActiveColor ? firstActiveColor.id : 'theme-orange';
+      
+      settings.localSync.enabled = document.getElementById('local-sync-toggle').checked;
+      settings.localSync.dir = document.getElementById('local-sync-dir').value.trim();
+      settings.localSync.mode = document.getElementById('local-sync-mode').value;
+      settings.localSync.interval = parseInt(document.getElementById('local-sync-interval').value, 10) || 60;
+      
+      settings.cloudSync.enabled = document.getElementById('cloud-sync-toggle').checked;
+      settings.cloudSync.endpoint = document.getElementById('cloud-sync-endpoint').value.trim();
+      settings.cloudSync.token = document.getElementById('cloud-sync-token').value.trim();
+      settings.cloudSync.mode = document.getElementById('cloud-sync-mode').value;
+      settings.cloudSync.interval = parseInt(document.getElementById('cloud-sync-interval').value, 10) || 60;
+    }
+
+    window.saveSettings = function() {
+      readSettingsFromUI();
+      updateIntervalVisibility();
+      updateSyncDisabledStates();
+      
+      const settingsJson = JSON.stringify(settings);
+      localStorage.setItem('carrotnotes_settings', settingsJson);
+      
+      if (invoke) {
+        invoke('save_settings', { settingsJson })
+          .then(() => {
+            if (window.__TAURI__) {
+              window.__TAURI__.event.emit('settings-changed');
+            }
+          })
+          .catch(console.error);
+      }
+      
+      if (settings.theme === 'dark') {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+      }
+      
+      startSyncSchedulers();
+    };
+
+    // Color manager rendering
+    function renderColorManager() {
+      const container = document.getElementById('color-manager-list');
+      if (!container) return;
+      container.innerHTML = '';
+      
+      settings.colors.forEach((color, index) => {
+        const item = document.createElement('div');
+        item.className = 'color-item';
+        
+        const left = document.createElement('div');
+        left.className = 'color-item-left';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = color.enabled;
+        checkbox.title = "Enable color";
+        checkbox.addEventListener('change', () => {
+          color.enabled = checkbox.checked;
+          saveSettings();
+        });
+        
+        const dot = document.createElement('span');
+        dot.className = 'color-preview-dot';
+        if (color.isBuiltIn) {
+          dot.style.backgroundColor = color.dot;
+        } else {
+          dot.style.backgroundColor = color.bg;
+        }
+        
+        const label = document.createElement('span');
+        label.className = 'color-label';
+        label.innerText = color.name;
+        
+        const badge = document.createElement('span');
+        badge.className = 'color-badge';
+        badge.innerText = color.isBuiltIn ? "Built-in" : "Custom";
+        
+        left.appendChild(checkbox);
+        left.appendChild(dot);
+        left.appendChild(label);
+        left.appendChild(badge);
+        
+        // Show "Default" indicator if it's the first active color
+        const firstActiveColor = settings.colors.find(c => c.enabled) || settings.colors[0];
+        if (firstActiveColor && firstActiveColor.id === color.id) {
+          const defBadge = document.createElement('span');
+          defBadge.className = 'color-badge';
+          defBadge.style.backgroundColor = 'var(--primary-color)';
+          defBadge.style.color = 'white';
+          defBadge.style.fontSize = '9px';
+          defBadge.innerText = "Default";
+          left.appendChild(defBadge);
+        }
+        
+        const actions = document.createElement('div');
+        actions.className = 'color-item-actions';
+        
+        // Up Arrow
+        const upBtn = document.createElement('button');
+        upBtn.className = 'btn-arrow';
+        upBtn.title = "Move Up";
+        upBtn.disabled = index === 0;
+        upBtn.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+          </svg>
+        `;
+        upBtn.addEventListener('click', () => {
+          if (index > 0) {
+            const temp = settings.colors[index - 1];
+            settings.colors[index - 1] = settings.colors[index];
+            settings.colors[index] = temp;
+            saveSettings();
+            renderColorManager();
+          }
+        });
+        
+        // Down Arrow
+        const downBtn = document.createElement('button');
+        downBtn.className = 'btn-arrow';
+        downBtn.title = "Move Down";
+        downBtn.disabled = index === settings.colors.length - 1;
+        downBtn.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <polyline points="19 12 12 19 5 12"></polyline>
+          </svg>
+        `;
+        downBtn.addEventListener('click', () => {
+          if (index < settings.colors.length - 1) {
+            const temp = settings.colors[index + 1];
+            settings.colors[index + 1] = settings.colors[index];
+            settings.colors[index] = temp;
+            saveSettings();
+            renderColorManager();
+          }
+        });
+        
+        actions.appendChild(upBtn);
+        actions.appendChild(downBtn);
+        
+        if (!color.isBuiltIn) {
+          const delBtn = document.createElement('button');
+          delBtn.className = 'btn-color-delete';
+          delBtn.title = "Delete Custom Color";
+          delBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          `;
+          delBtn.addEventListener('click', async () => {
+            if (await showCustomConfirm(`Remove custom color "${color.name}"?`, "Delete Color")) {
+              if (settings.defaultColor === color.id) {
+                settings.defaultColor = "theme-orange";
+              }
+              settings.colors = settings.colors.filter(c => c.id !== color.id);
+              saveSettings();
+              renderColorManager();
+            }
+          });
+          actions.appendChild(delBtn);
+        }
+        
+        item.appendChild(left);
+        item.appendChild(actions);
+        container.appendChild(item);
+      });
+    }
+
+    window.addCustomColor = async function() {
+      const nameEl = document.getElementById('new-color-name');
+      const bgEl = document.getElementById('new-color-bg');
+      const textEl = document.getElementById('new-color-text');
+      
+      const name = nameEl.value.trim();
+      if (!name) {
+        await showCustomAlert("Please enter a color name", "Missing Input");
+        return;
+      }
+      
+      const bg = bgEl.value;
+      const text = textEl.value;
+      const id = 'custom_' + Date.now();
+      
+      const newColor = {
+        id,
+        name,
+        bg,
+        text,
+        isBuiltIn: false,
+        enabled: true
+      };
+      
+      settings.colors.push(newColor);
+      nameEl.value = '';
+      
+      saveSettings();
+      renderColorManager();
+    };
+
+    function rebuildUIFontSelects() {
+      const familySelect = document.getElementById('default-font-family');
+      const sizeSelect = document.getElementById('default-font-size');
+      if (!familySelect || !sizeSelect) return;
+      
+      const currentFamily = settings.defaultFont.family;
+      const currentSize = settings.defaultFont.size;
+      
+      // Populate family select
+      familySelect.innerHTML = `
+        <option value="Caveat">Handwriting</option>
+        <option value="Inter">Inter (UI)</option>
+        <option value="Roboto">Roboto</option>
+        <option value="Courier Prime">Monospace</option>
+      `;
+      if (settings.customFonts) {
+        settings.customFonts.forEach(font => {
+          const opt = document.createElement('option');
+          opt.value = font;
+          opt.innerText = font;
+          familySelect.appendChild(opt);
+        });
+      }
+      familySelect.value = currentFamily;
+      if (!familySelect.value && familySelect.options.length > 0) {
+        familySelect.value = familySelect.options[0].value;
+      }
+      
+      // Populate size select
+      sizeSelect.innerHTML = `
+        <option value="14px">14px</option>
+        <option value="16px">16px</option>
+        <option value="18px">18px</option>
+        <option value="20px">20px</option>
+        <option value="22px">22px</option>
+        <option value="24px">24px</option>
+        <option value="28px">28px</option>
+      `;
+      if (settings.customFontSizes) {
+        settings.customFontSizes.forEach(size => {
+          let normalized = size;
+          if (!normalized.endsWith('px')) normalized += 'px';
+          const opt = document.createElement('option');
+          opt.value = normalized;
+          opt.innerText = normalized;
+          let exists = Array.from(sizeSelect.options).some(o => o.value === normalized);
+          if (!exists) {
+            sizeSelect.appendChild(opt);
+          }
+        });
+      }
+      sizeSelect.value = currentSize;
+      if (!sizeSelect.value && sizeSelect.options.length > 0) {
+        sizeSelect.value = sizeSelect.options[0].value;
+      }
+      if (window.initCustomSelects) {
+        window.initCustomSelects();
+      }
+    }
+
+    function renderCustomFontsAndSizes() {
+      const fontsContainer = document.getElementById('custom-fonts-manager-list');
+      const sizesContainer = document.getElementById('custom-sizes-manager-list');
+      if (!fontsContainer || !sizesContainer) return;
+      
+      fontsContainer.innerHTML = '';
+      sizesContainer.innerHTML = '';
+      
+      // Render custom fonts
+      if (!settings.customFonts || settings.customFonts.length === 0) {
+        fontsContainer.innerHTML = '<div style="font-size: 11px; opacity: 0.5; padding: 4px;">No custom fonts</div>';
+      } else {
+        settings.customFonts.forEach(font => {
+          const item = document.createElement('div');
+          item.className = 'color-item';
+          item.style.padding = '6px 10px';
+          
+          const name = document.createElement('span');
+          name.className = 'color-label';
+          name.style.fontSize = '12px';
+          name.innerText = font;
+          
+          const delBtn = document.createElement('button');
+          delBtn.className = 'btn-color-delete';
+          delBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px;">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          `;
+          delBtn.addEventListener('click', () => {
+            settings.customFonts = settings.customFonts.filter(f => f !== font);
+            saveSettings();
+            renderCustomFontsAndSizes();
+            rebuildUIFontSelects();
+          });
+          
+          item.appendChild(name);
+          item.appendChild(delBtn);
+          fontsContainer.appendChild(item);
+        });
+      }
+      
+      // Render custom sizes
+      if (!settings.customFontSizes || settings.customFontSizes.length === 0) {
+        sizesContainer.innerHTML = '<div style="font-size: 11px; opacity: 0.5; padding: 4px;">No custom sizes</div>';
+      } else {
+        settings.customFontSizes.forEach(size => {
+          const item = document.createElement('div');
+          item.className = 'color-item';
+          item.style.padding = '6px 10px';
+          
+          const name = document.createElement('span');
+          name.className = 'color-label';
+          name.style.fontSize = '12px';
+          name.innerText = size.endsWith('px') ? size : size + 'px';
+          
+          const delBtn = document.createElement('button');
+          delBtn.className = 'btn-color-delete';
+          delBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px; height:12px;">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          `;
+          delBtn.addEventListener('click', () => {
+            settings.customFontSizes = settings.customFontSizes.filter(s => s !== size);
+            saveSettings();
+            renderCustomFontsAndSizes();
+            rebuildUIFontSelects();
+          });
+          
+          item.appendChild(name);
+          item.appendChild(delBtn);
+          sizesContainer.appendChild(item);
+        });
+      }
+    }
+
+    window.addCustomFont = async function() {
+      const input = document.getElementById('new-font-name');
+      const font = input.value.trim();
+      if (!font) {
+        await showCustomAlert("Please enter a font name", "Missing Input");
+        return;
+      }
+      if (!settings.customFonts) settings.customFonts = [];
+      if (!settings.customFonts.includes(font)) {
+        settings.customFonts.push(font);
+      }
+      input.value = '';
+      saveSettings();
+      renderCustomFontsAndSizes();
+      rebuildUIFontSelects();
+    };
+
+    window.addCustomFontSize = async function() {
+      const input = document.getElementById('new-font-size');
+      let size = input.value.trim();
+      if (!size) {
+        await showCustomAlert("Please enter a font size", "Missing Input");
+        return;
+      }
+      if (!size.endsWith('px')) {
+        size += 'px';
+      }
+      if (!settings.customFontSizes) settings.customFontSizes = [];
+      if (!settings.customFontSizes.includes(size)) {
+        settings.customFontSizes.push(size);
+      }
+      input.value = '';
+      saveSettings();
+      renderCustomFontsAndSizes();
+      rebuildUIFontSelects();
+    };
+
+    // Load and render note listings
+    function loadAllNotes(openPrevious = false) {
+      const render = (jsonString) => {
+        try {
+          notes = JSON.parse(jsonString || '[]');
+          const pinnedListEl = document.getElementById('pinned-notes-list');
+          const recentListEl = document.getElementById('notes-list');
+          const pinnedSection = document.getElementById('pinned-section');
+          const emptyState = document.getElementById('empty-state');
+
+          pinnedListEl.innerHTML = '';
+          recentListEl.innerHTML = '';
+          
+          if (notes.length === 0) {
+            pinnedSection.style.display = 'none';
+            emptyState.style.display = 'flex';
+            return;
+          }
+
+          emptyState.style.display = 'none';
+
+          // Separate pinned and recent notes
+          const pinnedNotes = notes.filter(n => n.pinned);
+          const recentNotes = notes.filter(n => !n.pinned);
+
+          // Sort each group (reverse chronological)
+          const sortedPinned = [...pinnedNotes].reverse();
+          const sortedRecent = [...recentNotes].reverse();
+
+          if (sortedPinned.length > 0) {
+            pinnedSection.style.display = 'block';
+          } else {
+            pinnedSection.style.display = 'none';
+          }
+
+          const renderNoteCard = (note, container) => {
+            const previewCard = document.createElement('div');
+            previewCard.className = `note-card-preview`;
+            
+            // Apply color class/styles
+            const colorObj = settings.colors.find(c => c.id === note.theme) || { id: note.theme, isBuiltIn: true };
+            if (colorObj.isBuiltIn) {
+              previewCard.classList.add(colorObj.id || 'theme-orange');
+            } else {
+              previewCard.style.backgroundColor = colorObj.bg;
+              previewCard.style.color = colorObj.text;
+              previewCard.style.borderLeftColor = colorObj.bg;
+            }
+            
+            const isOpen = note.isOpen || false;
+            const textContent = note.content ? stripHtml(note.content) : 'Empty note...';
+            
+            // Badges
+            const statusHtml = `<span class="status-badge ${isOpen ? 'active' : 'archived'}">${isOpen ? 'Floating' : 'Archived'}</span>`;
+            const tempHtml = note.isTemporary ? `<span class="status-badge" style="background:#ff7a00; color:white; margin-left:4px;">Temporary</span>` : '';
+
+            // Note title
+            const noteTitle = note.title || "Untitled Note";
+
+            // Pin button
+            const isNotePinned = note.pinned || false;
+            const pinIconHtml = `
+              <button class="preview-action-btn no-drag pin-card-btn ${isNotePinned ? 'pinned' : ''}" onclick="togglePinStickyNote(event, '${note.id}')" title="${isNotePinned ? 'Unpin Note' : 'Pin Note'}">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="${isNotePinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2.5">
+                  <line x1="12" y1="17" x2="12" y2="22"></line>
+                  <path d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.55A2 2 0 0 1 15 9.21V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v4.21a2 2 0 0 1-.78 1.24L5.44 14a2 2 0 0 0-.44 1.24V17z"></path>
+                </svg>
+              </button>
+            `;
+
+            previewCard.innerHTML = `
+              <div class="preview-header">
+                <div>
+                  ${statusHtml}
+                  ${tempHtml}
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  ${pinIconHtml}
+                  <!-- Rename button -->
+                  <button class="preview-action-btn no-drag" onclick="renameStickyNoteInline(event, '${note.id}')" title="Rename Note">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="preview-title" style="font-size: 11px; font-weight:700; opacity:0.8; margin-top:2px;">${noteTitle}</div>
+              <div class="preview-body">${textContent}</div>
+              <div class="preview-footer">
+                <button class="preview-action-btn no-drag" onclick="toggleStickyWindowState(event, '${note.id}')" title="${isOpen ? 'Close Note Window' : 'Float Note'}">
+                  ${isOpen ? `
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="9" y1="9" x2="15" y2="15"></line>
+                      <line x1="15" y1="9" x2="9" y2="15"></line>
+                    </svg>
+                  ` : `
+                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <polyline points="9 11 12 14 22 4"></polyline>
+                      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                    </svg>
+                  `}
+                </button>
+                <button class="preview-action-btn delete-btn no-drag" onclick="deleteStickyNote(event, '${note.id}')" title="Delete Note">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                  </svg>
+                </button>
+              </div>
+            `;
+            
+            previewCard.addEventListener('click', (e) => {
+              if (e.target.closest('.no-drag') || e.target.closest('input') || e.target.closest('button')) {
+                return;
+              }
+              openStickyWindow(note.id);
+            });
+
+            container.appendChild(previewCard);
+
+            // Restore previously opened windows on startup
+            if (openPrevious && isOpen) {
+              openStickyWindow(note.id, false); 
+            }
+          };
+
+          sortedPinned.forEach(note => {
+            renderNoteCard(note, pinnedListEl);
+          });
+
+          sortedRecent.forEach(note => {
+            renderNoteCard(note, recentListEl);
+          });
+
+        } catch (e) {
+          console.error(e);
+        }
+      };
+
+      if (invoke) {
+        invoke('load_notes')
+          .then(render)
+          .catch(err => {
+            console.error(err);
+            render(localStorage.getItem('carrotnotes_notes'));
+          });
+      } else {
+        render(localStorage.getItem('carrotnotes_notes'));
+      }
+    }
+
+    // Toggle Pin/Unpin of a Sticky Note
+    window.togglePinStickyNote = function(e, id) {
+      if (e) e.stopPropagation();
+      const note = notes.find(n => n.id === id);
+      if (note) {
+        note.pinned = !note.pinned;
+        persistNotes();
+        loadAllNotes(false);
+      }
+    };
+
+    function stripHtml(html) {
+      let doc = new DOMParser().parseFromString(html, 'text/html');
+      return doc.body.textContent || "";
+    }
+
+    // Create New Sticky Note
+    window.createNewNote = function() {
+      const defaultColor = settings.defaultColor || 'theme-orange';
+      const noteId = 'note_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      
+      // Smart note numbering logic
+      let n = 1;
+      while (notes.some(note => note.title.trim().toLowerCase() === `note ${n}`)) {
+        n++;
+      }
+      const defaultTitle = `Note ${n}`;
+
+      const newNote = {
+        id: noteId,
+        title: defaultTitle,
+        content: '',
+        theme: defaultColor,
+        rotation: (Math.random() * 3 - 1.5).toFixed(2),
+        pinned: false,
+        isOpen: true,
+        isTemporary: true,
+        alwaysOnTop: false,
+        fontFamily: settings.defaultFont.family,
+        fontSize: settings.defaultFont.size,
+        width: settings.defaultSize.width,
+        height: settings.defaultSize.height
+      };
+
+      notes.push(newNote);
+      persistNotes();
+      
+      openStickyWindow(noteId);
+    };
+
+    window.toggleStickyWindowState = function(e, id) {
+      if (e) e.stopPropagation();
+      const note = notes.find(n => n.id === id);
+      if (note) {
+        note.isOpen = !note.isOpen;
+        persistNotes();
+        if (note.isOpen) {
+          openStickyWindow(id);
+        } else {
+          // Close using bulletproof Rust command
+          if (invoke) {
+            invoke('close_note_window', { id }).catch(console.error);
+          } else if (window.__TAURI__) {
+            const win = window.__TAURI__.window.WebviewWindow.getByLabel(`note_${id}`);
+            if (win) win.close();
+          }
+        }
+        loadAllNotes(false);
+      }
+    };
+
+    window.deleteStickyNote = async function(e, id) {
+      if (e) e.stopPropagation();
+      if (await showCustomConfirm('Delete this sticky note permanently?', 'Delete Note')) {
+        notes = notes.filter(n => n.id !== id);
+        persistNotes();
+        
+        // Close using bulletproof Rust command
+        if (invoke) {
+          invoke('close_note_window', { id }).catch(console.error);
+        } else if (window.__TAURI__) {
+          const win = window.__TAURI__.window.WebviewWindow.getByLabel(`note_${id}`);
+          if (win) win.close();
+        }
+        
+        loadAllNotes(false);
+      }
+    };
+
+    window.renameStickyNoteInline = function(e, id) {
+      if (e) e.stopPropagation();
+      const card = e.currentTarget.closest('.note-card-preview');
+      const titleEl = card.querySelector('.preview-title');
+      const oldTitle = titleEl.innerText;
+      
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = oldTitle;
+      input.className = 'inline-rename-input';
+      
+      titleEl.replaceWith(input);
+      input.focus();
+      input.select();
+      
+      const finishRename = () => {
+        const newTitle = input.value.trim() || oldTitle;
+        const note = notes.find(n => n.id === id);
+        if (note) {
+          note.title = newTitle;
+          note.isTemporary = false;
+          persistNotes();
+          
+          // Emit settings-changed event to trigger note page refresh
+          if (window.__TAURI__) {
+            window.__TAURI__.event.emit('notes-changed');
+          }
+        }
+        loadAllNotes(false);
+      };
+      
+      input.addEventListener('keydown', (evt) => {
+        if (evt.key === 'Enter') {
+          finishRename();
+        } else if (evt.key === 'Escape') {
+          loadAllNotes(false);
+        }
+      });
+      
+      input.addEventListener('blur', finishRename);
+      input.addEventListener('click', (evt) => evt.stopPropagation());
+    };
+
+    window.openStickyWindow = function(id, focus = true) {
+      const note = notes.find(n => n.id === id);
+      if (note) {
+        note.isOpen = true;
+        persistNotes();
+        loadAllNotes(false);
+
+        if (invoke) {
+          invoke('open_note_window', {
+            id: note.id,
+            x: note.x || null,
+            y: note.y || null,
+            width: note.width || settings.defaultSize.width,
+            height: note.height || settings.defaultSize.height,
+            alwaysOnTop: note.alwaysOnTop || false
+          }).catch(console.error);
+        }
+      }
+    };
+
+    function persistNotes() {
+      const notesJson = JSON.stringify(notes);
+      localStorage.setItem('carrotnotes_notes', notesJson);
+
+      // Perform local/cloud sync if in on_save mode
+      triggerSyncIfOnSave(notesJson);
+
+      if (invoke) {
+        invoke('save_notes', { notesJson })
+          .then(() => {
+            if (window.__TAURI__) {
+              window.__TAURI__.event.emit('notes-changed');
+            }
+          })
+          .catch(console.error);
+      }
+    }
+
+    function triggerSyncIfOnSave(notesJson) {
+      if (settings.localSync.enabled && settings.localSync.mode === 'on_save') {
+        if (invoke) {
+          invoke('sync_to_local_directory', { dirPath: settings.localSync.dir, notesJson })
+            .catch(console.error);
+        }
+      }
+      if (settings.cloudSync.enabled && settings.cloudSync.mode === 'on_save') {
+        if (invoke) {
+          invoke('sync_notes_to_cloud', { 
+            endpoint: settings.cloudSync.endpoint, 
+            token: settings.cloudSync.token, 
+            notesJson 
+          }).catch(console.error);
+        }
+      }
+    }
+
+    function startSyncSchedulers() {
+      clearInterval(localSyncTimer);
+      clearInterval(cloudSyncTimer);
+      
+      if (settings.localSync.enabled && settings.localSync.mode === 'scheduled') {
+        const intervalSec = parseInt(settings.localSync.interval, 10) || 60;
+        localSyncTimer = setInterval(() => {
+          syncLocalNow();
+        }, intervalSec * 1000);
+      }
+      
+      if (settings.cloudSync.enabled && settings.cloudSync.mode === 'scheduled') {
+        const intervalSec = parseInt(settings.cloudSync.interval, 10) || 60;
+        cloudSyncTimer = setInterval(() => {
+          syncCloudNow();
+        }, intervalSec * 1000);
+      }
+    }
+
+    window.syncLocalNow = async function() {
+      if (!settings.localSync.enabled) return;
+      const statusEl = document.getElementById('local-sync-status');
+      const dirPath = settings.localSync.dir;
+      
+      if (!dirPath) {
+        statusEl.textContent = "Status: Error - Missing local folder path";
+        statusEl.style.color = '#ff4d4d';
+        return;
+      }
+      
+      statusEl.textContent = "Status: Syncing...";
+      statusEl.style.color = '';
+      
+      const notesJson = localStorage.getItem('carrotnotes_notes') || '[]';
+      
+      if (invoke) {
+        invoke('sync_to_local_directory', { dirPath, notesJson })
+          .then(() => {
+             statusEl.textContent = `Status: Sync success - ${new Date().toLocaleTimeString()}`;
+             statusEl.style.color = '#3cd69e';
+          })
+          .catch(err => {
+             statusEl.textContent = `Status: Error - ${err}`;
+             statusEl.style.color = '#ff4d4d';
+          });
+      } else {
+        setTimeout(() => {
+          statusEl.textContent = `Status: Mock Sync Success (Web Sandbox) - ${new Date().toLocaleTimeString()}`;
+          statusEl.style.color = '#3cd69e';
+        }, 1000);
+      }
+    };
+
+    window.syncCloudNow = async function() {
+      if (!settings.cloudSync.enabled) return;
+      const statusEl = document.getElementById('cloud-sync-status');
+      const endpoint = settings.cloudSync.endpoint;
+      const token = settings.cloudSync.token;
+      
+      if (!endpoint) {
+        statusEl.textContent = "Status: Error - Missing URL endpoint";
+        statusEl.style.color = '#ff4d4d';
+        return;
+      }
+      
+      statusEl.textContent = "Status: Syncing...";
+      statusEl.style.color = '';
+      
+      const notesJson = localStorage.getItem('carrotnotes_notes') || '[]';
+      
+      if (invoke) {
+        invoke('sync_notes_to_cloud', { endpoint, token, notesJson })
+          .then(() => {
+            statusEl.textContent = `Status: Sync success - ${new Date().toLocaleTimeString()}`;
+            statusEl.style.color = '#3cd69e';
+          })
+          .catch(err => {
+            statusEl.textContent = `Status: Error - ${err}`;
+            statusEl.style.color = '#ff4d4d';
+          });
+      } else {
+        setTimeout(() => {
+          statusEl.textContent = `Status: Mock Sync Success (Web Sandbox) - ${new Date().toLocaleTimeString()}`;
+          statusEl.style.color = '#3cd69e';
+        }, 1000);
+      }
+    };
+
+    // Custom alert/confirm Dialogs Implementation
+    window.showCustomAlert = function(message, title = "Alert") {
+      return new Promise((resolve) => {
+        const overlay = document.getElementById('custom-dialog-overlay');
+        const titleEl = document.getElementById('custom-dialog-title');
+        const msgEl = document.getElementById('custom-dialog-message');
+        const okBtn = document.getElementById('custom-dialog-ok');
+        const cancelBtn = document.getElementById('custom-dialog-cancel');
+        
+        titleEl.innerText = title;
+        msgEl.innerText = message;
+        cancelBtn.style.display = 'none';
+        overlay.style.display = 'flex';
+        
+        const onOk = () => {
+          okBtn.removeEventListener('click', onOk);
+          overlay.style.display = 'none';
+          resolve();
+        };
+        
+        okBtn.addEventListener('click', onOk);
+      });
+    };
+
+    window.showCustomConfirm = function(message, title = "Confirm") {
+      return new Promise((resolve) => {
+        const overlay = document.getElementById('custom-dialog-overlay');
+        const titleEl = document.getElementById('custom-dialog-title');
+        const msgEl = document.getElementById('custom-dialog-message');
+        const okBtn = document.getElementById('custom-dialog-ok');
+        const cancelBtn = document.getElementById('custom-dialog-cancel');
+        
+        titleEl.innerText = title;
+        msgEl.innerText = message;
+        cancelBtn.style.display = 'inline-block';
+        overlay.style.display = 'flex';
+        
+        const onOk = () => {
+          okBtn.removeEventListener('click', onOk);
+          cancelBtn.removeEventListener('click', onCancel);
+          overlay.style.display = 'none';
+          resolve(true);
+        };
+        
+        const onCancel = () => {
+          okBtn.removeEventListener('click', onOk);
+          cancelBtn.removeEventListener('click', onCancel);
+          overlay.style.display = 'none';
+          resolve(false);
+        };
+        
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+      });
+    };
+
+    // Custom Number Input Spinner functions
+    window.stepUp = function(id) {
+      const input = document.getElementById(id);
+      if (input && !input.disabled) {
+        input.stepUp();
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    };
+    
+    window.stepDown = function(id) {
+      const input = document.getElementById(id);
+      if (input && !input.disabled) {
+        input.stepDown();
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    };
+
+    function initCustomSelects() {
+      const selects = document.querySelectorAll('.form-group select');
+      selects.forEach(select => {
+        let container = select.nextElementSibling;
+        if (!container || !container.classList.contains('custom-select-container')) {
+          container = document.createElement('div');
+          container.className = 'custom-select-container';
+          select.parentNode.insertBefore(container, select.nextSibling);
+        }
+        
+        container.innerHTML = '';
+        
+        const trigger = document.createElement('div');
+        trigger.className = 'custom-select-trigger';
+        
+        const selectedOpt = select.options[select.selectedIndex];
+        trigger.textContent = selectedOpt ? selectedOpt.textContent : '';
+        
+        const optionsList = document.createElement('div');
+        optionsList.className = 'custom-select-options';
+        
+        Array.from(select.options).forEach(opt => {
+          const customOpt = document.createElement('div');
+          customOpt.className = 'custom-select-option';
+          if (opt.value === select.value) {
+            customOpt.classList.add('selected');
+          }
+          customOpt.textContent = opt.textContent;
+          customOpt.setAttribute('data-value', opt.value);
+          
+          customOpt.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (select.disabled) return;
+            select.value = opt.value;
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            optionsList.classList.remove('show');
+            container.classList.remove('active');
+          });
+          
+          optionsList.appendChild(customOpt);
+        });
+        
+        trigger.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (select.disabled) return;
+          
+          const isShow = optionsList.classList.contains('show');
+          
+          document.querySelectorAll('.custom-select-options').forEach(el => {
+            if (el !== optionsList) el.classList.remove('show');
+          });
+          document.querySelectorAll('.custom-select-container').forEach(el => {
+            if (el !== container) el.classList.remove('active');
+          });
+          
+          if (!isShow) {
+            optionsList.classList.add('show');
+            container.classList.add('active');
+          } else {
+            optionsList.classList.remove('show');
+            container.classList.remove('active');
+          }
+        });
+        
+        container.appendChild(trigger);
+        container.appendChild(optionsList);
+        
+        if (select.disabled) {
+          container.classList.add('disabled');
+        } else {
+          container.classList.remove('disabled');
+        }
+      });
+    }
+    
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.custom-select-options.show').forEach(el => el.classList.remove('show'));
+      document.querySelectorAll('.custom-select-container.active').forEach(el => el.classList.remove('active'));
+    });
+    
+    window.initCustomSelects = initCustomSelects;
+  </script>
+
+  <!-- Custom Modal Dialogs -->
+  <div id="custom-dialog-overlay" class="custom-dialog-overlay" style="display: none;">
+    <div class="custom-dialog-box">
+      <div id="custom-dialog-title" class="custom-dialog-title">Alert</div>
+      <div id="custom-dialog-message" class="custom-dialog-message">Message</div>
+      <div class="custom-dialog-buttons">
+        <button id="custom-dialog-cancel" class="btn-dialog-secondary">Cancel</button>
+        <button id="custom-dialog-ok" class="btn-dialog-primary">OK</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
