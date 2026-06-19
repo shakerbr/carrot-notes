@@ -328,22 +328,27 @@
       color: #fff;
     }
 
+    /* Shared list/checkbox indent from the editor edge */
+    .note-editor {
+      --list-indent: 1.85em;
+    }
+
     /* Bullet and Numbered Lists */
+    .note-editor ul,
+    .note-editor ol {
+      list-style-position: outside !important;
+      padding-left: var(--list-indent) !important;
+      margin: 0.35em 0 !important;
+    }
     .note-editor ul {
       list-style-type: disc !important;
-      list-style-position: outside !important;
-      padding-left: 1.85em !important;
-      margin: 0.35em 0 !important;
     }
     .note-editor ol {
       list-style-type: decimal !important;
-      list-style-position: outside !important;
-      padding-left: 2.25em !important;
-      margin: 0.35em 0 !important;
     }
     .note-editor li {
       margin: 0.25em 0 !important;
-      padding-left: 0.35em !important;
+      padding-left: 0 !important;
       user-select: text !important;
       font-family: inherit !important;
       font-size: inherit !important;
@@ -359,7 +364,7 @@
     /* Checklist elements — sizes scale with note font via em units */
     .checklist-item {
       position: relative;
-      padding-left: 1.85em;
+      padding-left: var(--list-indent);
       margin: 0.35em 0;
       display: block;
       min-height: 1.2em;
@@ -377,8 +382,8 @@
       top: 0.18em;
       appearance: none;
       -webkit-appearance: none;
-      width: 1em;
-      height: 1em;
+      width: calc(1em - 0.2em);
+      height: calc(1em - 0.2em);
       font-size: inherit;
       border: 0.08em solid var(--note-text);
       opacity: 0.7;
@@ -402,14 +407,14 @@
     
     .checklist-item input[type="checkbox"]:checked::after {
       content: "";
-      width: 0.22em;
-      height: 0.42em;
+      width: 0.18em;
+      height: 0.34em;
       border: solid white;
-      border-width: 0 0.09em 0.09em 0;
+      border-width: 0 0.08em 0.08em 0;
       transform: rotate(45deg);
       position: absolute;
-      top: 0.1em;
-      left: 0.28em;
+      top: 0.07em;
+      left: 0.24em;
     }
 
     .checklist-text {
@@ -1192,7 +1197,7 @@
                     <line x1="3" y1="12" x2="3.01" y2="12"></line>
                     <line x1="3" y1="18" x2="3.01" y2="18"></line>
                   </svg>
-                  <span>Bullet List</span>
+                  <span>Bulled</span>
                 </div>
                 <span class="shortcut">Ctrl+Shift+L</span>
               </div>
@@ -1207,7 +1212,7 @@
                     <path d="M6 6H4"></path>
                     <circle cx="5" cy="15" r="1"></circle>
                   </svg>
-                  <span>Numbered List</span>
+                  <span>List</span>
                 </div>
                 <span class="shortcut">Ctrl+Shift+O</span>
               </div>
