@@ -119,12 +119,14 @@
       font-weight: 600;
       color: var(--note-accent);
       pointer-events: none;
+      flex-shrink: 0;
     }
 
     /* Embed your official carrot vector logo dimensions */
     .brand-logo {
       width: 16px;
       height: 16px;
+      flex-shrink: 0;
     }
 
     .window-controls {
@@ -521,10 +523,6 @@
       flex-shrink: 0;
     }
 
-    /* Very narrow: hide brand logo to give the title more room */
-    .very-narrow-layout .brand {
-      display: none;
-    }
     .very-narrow-layout #title-container {
       min-width: 0;
     }
