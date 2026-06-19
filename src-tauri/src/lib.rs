@@ -321,6 +321,13 @@ fn set_always_on_top(window: tauri::Window, always_on_top: bool) -> Result<(), S
     Ok(())
 }
 
+const NOTE_MIN_WIDTH: f64 = 240.0;
+const NOTE_MIN_HEIGHT: f64 = 280.0;
+
+fn note_min_size() -> tauri::Size {
+    tauri::Size::Logical(tauri::LogicalSize::new(NOTE_MIN_WIDTH, NOTE_MIN_HEIGHT))
+}
+
 // Spawns a new independent note window with specific position, size, and always-on-top state
 #[tauri::command]
 fn open_note_window(
@@ -334,14 +341,16 @@ fn open_note_window(
 ) -> Result<(), String> {
     let label = format!("note_{}", id);
 
-    // If the window already exists, focus it
+    // If the window already exists, focus it and ensure min size is enforced
     if let Some(win) = app_handle.get_webview_window(&label) {
+        win.set_min_size(Some(note_min_size())).map_err(|e| e.to_string())?;
         win.show().unwrap();
         win.set_focus().unwrap();
         return Ok(());
-    }    // Default size for sticky note window
-    let w = width.unwrap_or(280.0);
-    let h = height.unwrap_or(300.0);
+    }
+
+    let w = width.unwrap_or(280.0).max(NOTE_MIN_WIDTH);
+    let h = height.unwrap_or(300.0).max(NOTE_MIN_HEIGHT);
 
     let mut win_builder = tauri::WebviewWindowBuilder::new(
         &app_handle,
@@ -350,7 +359,7 @@ fn open_note_window(
     )
     .title("CarrotNote")
     .inner_size(w, h)
-    .min_inner_size(180.0, 150.0)
+    .min_inner_size(NOTE_MIN_WIDTH, NOTE_MIN_HEIGHT)
     .decorations(false)
     .transparent(true)
     .resizable(true)
