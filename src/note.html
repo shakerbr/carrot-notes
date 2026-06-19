@@ -331,31 +331,41 @@
     /* Bullet and Numbered Lists */
     .note-editor ul {
       list-style-type: disc !important;
-      padding-left: 1.1em !important;
-      margin: 0.3em 0 !important;
+      list-style-position: outside !important;
+      padding-left: 1.85em !important;
+      margin: 0.35em 0 !important;
     }
     .note-editor ol {
       list-style-type: decimal !important;
-      padding-left: 1.1em !important;
-      margin: 0.3em 0 !important;
+      list-style-position: outside !important;
+      padding-left: 2.25em !important;
+      margin: 0.35em 0 !important;
     }
     .note-editor li {
-      margin: 0.2em 0 !important;
+      margin: 0.25em 0 !important;
+      padding-left: 0.35em !important;
       user-select: text !important;
+      font-family: inherit !important;
+      font-size: inherit !important;
+      line-height: inherit !important;
     }
     .note-editor li::marker {
-      font-family: var(--font-ui) !important; /* Inter */
-      color: var(--note-accent) !important;   /* Dynamic note accent color */
-      font-weight: 600 !important;
+      font-family: inherit !important;
+      font-size: inherit !important;
+      font-weight: inherit !important;
+      color: var(--note-accent) !important;
     }
 
-    /* Checklist elements */
+    /* Checklist elements — sizes scale with note font via em units */
     .checklist-item {
       position: relative;
-      padding-left: 1.6em;
-      margin: 0.3em 0;
+      padding-left: 1.85em;
+      margin: 0.35em 0;
       display: block;
       min-height: 1.2em;
+      font-family: inherit;
+      font-size: inherit;
+      line-height: inherit;
       outline: none !important;
       border: none !important;
       box-shadow: none !important;
@@ -363,21 +373,25 @@
     
     .checklist-item input[type="checkbox"] {
       position: absolute;
-      left: 0.2em;
-      top: 0.25em;
+      left: 0.15em;
+      top: 0.18em;
       appearance: none;
       -webkit-appearance: none;
-      width: 0.8em;
-      height: 0.8em;
-      border: 0.1em solid var(--note-text);
+      width: 1em;
+      height: 1em;
+      font-size: inherit;
+      border: 0.08em solid var(--note-text);
       opacity: 0.7;
-      border-radius: 0.2em;
+      border-radius: 0.18em;
       outline: none;
       cursor: pointer;
-      transition: all var(--motion-duration) var(--motion-ease);
+      transition: background-color var(--motion-duration) var(--motion-ease),
+                  border-color var(--motion-duration) var(--motion-ease),
+                  opacity var(--motion-duration) var(--motion-ease);
       background: transparent;
       margin: 0;
       z-index: 5;
+      box-sizing: border-box;
     }
     
     .checklist-item input[type="checkbox"]:checked {
@@ -388,14 +402,14 @@
     
     .checklist-item input[type="checkbox"]:checked::after {
       content: "";
-      width: 0.2em;
-      height: 0.4em;
+      width: 0.22em;
+      height: 0.42em;
       border: solid white;
-      border-width: 0 0.08em 0.08em 0;
+      border-width: 0 0.09em 0.09em 0;
       transform: rotate(45deg);
       position: absolute;
-      top: 0.08em;
-      left: 0.22em;
+      top: 0.1em;
+      left: 0.28em;
     }
 
     .checklist-text {
