@@ -282,6 +282,8 @@
       gap: 10px;
       min-height: 140px;
       border-left: 4px solid var(--primary-color);
+      background: var(--bg-card-light);
+      color: var(--text-light);
       transition: all var(--motion-duration-slow) var(--motion-ease);
       position: relative;
     }
@@ -292,6 +294,8 @@
     }
     body.dark-mode .note-card-preview {
       border-color: var(--border-dark);
+      background: var(--bg-card-dark);
+      color: var(--text-dark);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
     body.dark-mode .note-card-preview:hover {
@@ -338,6 +342,17 @@
       white-space: pre-wrap;
       word-break: break-word;
       opacity: 0.95;
+    }
+
+    /* Inner swatch showing the note's actual colors — chrome stays dashboard-neutral */
+    .preview-note-area {
+      border-radius: 8px;
+      padding: 8px 10px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-height: 0;
     }
 
     .preview-footer {
@@ -391,13 +406,20 @@
       opacity: 1;
     }
 
-    /* Colors and Dot Styles */
-    .theme-orange { background: #FFF7EC; border-left-color: #FF9E42; color: #6E3B00; }
-    .theme-yellow { background: #FFFFED; border-left-color: #E6D33C; color: #594D00; }
-    .theme-green { background: #F1FDF8; border-left-color: #3CD69E; color: #045837; }
-    .theme-blue { background: #F1FAFE; border-left-color: #3CB8E6; color: #004D70; }
-    .theme-lavender { background: #FAF3FF; border-left-color: #B069F5; color: #49008E; }
-    .theme-dark { background: #25252C; border-left-color: #5C5C6B; color: #E2E2EA; }
+    /* Theme accent on card edge + note preview swatch colors */
+    .note-card-preview.theme-orange { border-left-color: #FF9E42; }
+    .note-card-preview.theme-yellow { border-left-color: #E6D33C; }
+    .note-card-preview.theme-green { border-left-color: #3CD69E; }
+    .note-card-preview.theme-blue { border-left-color: #3CB8E6; }
+    .note-card-preview.theme-lavender { border-left-color: #B069F5; }
+    .note-card-preview.theme-dark { border-left-color: #5C5C6B; }
+
+    .preview-note-area.theme-orange { background: #FFF7EC; color: #6E3B00; }
+    .preview-note-area.theme-yellow { background: #FFFFED; color: #594D00; }
+    .preview-note-area.theme-green { background: #F1FDF8; color: #045837; }
+    .preview-note-area.theme-blue { background: #F1FAFE; color: #004D70; }
+    .preview-note-area.theme-lavender { background: #FAF3FF; color: #49008E; }
+    .preview-note-area.theme-dark { background: #25252C; color: #E2E2EA; }
 
     /* Create New sticky note dashboard button styling */
     .btn-create-large {
@@ -2343,16 +2365,19 @@
 
           const renderNoteCard = (note, container) => {
             const previewCard = document.createElement('div');
-            previewCard.className = `note-card-preview`;
+            previewCard.className = 'note-card-preview';
             
             // Apply color class/styles
             const colorObj = settings.colors.find(c => c.id === note.theme) || { id: note.theme, isBuiltIn: true };
+            let noteAreaClass = 'preview-note-area';
+            let noteAreaStyle = '';
             if (colorObj.isBuiltIn) {
-              previewCard.classList.add(colorObj.id || 'theme-orange');
+              const themeId = colorObj.id || 'theme-orange';
+              previewCard.classList.add(themeId);
+              noteAreaClass += ` ${themeId}`;
             } else {
-              previewCard.style.backgroundColor = colorObj.bg;
-              previewCard.style.color = colorObj.text;
-              previewCard.style.borderLeftColor = colorObj.bg;
+              noteAreaStyle = `background-color:${colorObj.bg};color:${colorObj.text};`;
+              previewCard.style.borderLeftColor = colorObj.dot || colorObj.bg;
             }
             
             const isOpen = note.isOpen || false;
@@ -2393,8 +2418,10 @@
                   </button>
                 </div>
               </div>
-              <div class="preview-title" style="font-size: 11px; font-weight:700; opacity:0.8; margin-top:2px;">${noteTitle}</div>
-              <div class="preview-body">${textContent}</div>
+              <div class="${noteAreaClass}"${noteAreaStyle ? ` style="${noteAreaStyle}"` : ''}>
+                <div class="preview-title" style="font-size: 11px; font-weight:700; opacity:0.8;">${noteTitle}</div>
+                <div class="preview-body">${textContent}</div>
+              </div>
               <div class="preview-footer">
                 <button class="preview-action-btn no-drag" onclick="toggleStickyWindowState(event, '${note.id}')" title="${isOpen ? 'Close Note Window' : 'Float Note'}">
                   ${isOpen ? `
