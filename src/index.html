@@ -2438,6 +2438,12 @@
                     </svg>
                   `}
                 </button>
+                <button class="preview-action-btn no-drag" onclick="duplicateStickyNote(event, '${note.id}')" title="Duplicate Note">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
                 <button class="preview-action-btn delete-btn no-drag" onclick="deleteStickyNote(event, '${note.id}')" title="Delete Note">
                   <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="3 6 5 6 21 6"></polyline>
@@ -2558,6 +2564,48 @@
         }
         loadAllNotes(false);
       }
+    };
+
+    function generateDuplicateTitle(sourceTitle) {
+      const base = (sourceTitle || 'Untitled Note').replace(/\s*\(Copy(?:\s+\d+)?\)\s*$/i, '').trim() || 'Untitled Note';
+      let candidate = `${base} (Copy)`;
+      let n = 2;
+      while (notes.some(note => note.title.trim().toLowerCase() === candidate.toLowerCase())) {
+        candidate = `${base} (Copy ${n})`;
+        n++;
+      }
+      return candidate;
+    }
+
+    window.duplicateStickyNote = function(e, id) {
+      if (e) e.stopPropagation();
+      const source = notes.find(n => n.id === id);
+      if (!source) return;
+
+      const noteId = 'note_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+      const duplicate = {
+        id: noteId,
+        title: generateDuplicateTitle(source.title),
+        content: source.content || '',
+        theme: source.theme || settings.defaultColor || 'theme-orange',
+        rotation: source.rotation || 0,
+        pinned: false,
+        alwaysOnTop: false,
+        isOpen: false,
+        isTemporary: false,
+        readOnly: source.readOnly || false,
+        fontFamily: source.fontFamily || settings.defaultFont.family,
+        fontSize: source.fontSize || settings.defaultFont.size,
+        width: source.width || settings.defaultSize.width,
+        height: source.height || settings.defaultSize.height
+      };
+
+      if (typeof source.x === 'number') duplicate.x = source.x + 24;
+      if (typeof source.y === 'number') duplicate.y = source.y + 24;
+
+      notes.push(duplicate);
+      persistNotes();
+      loadAllNotes(false);
     };
 
     window.deleteStickyNote = async function(e, id) {
