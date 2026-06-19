@@ -15,9 +15,9 @@
       {
         "label": "main",
         "title": "CarrotNotes",
-        "width": 440,
+        "width": 460,
         "height": 600,
-        "minWidth": 440,
+        "minWidth": 460,
         "minHeight": 480,
         "decorations": false,
         "transparent": true,
