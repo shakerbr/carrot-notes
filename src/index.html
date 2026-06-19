@@ -1085,13 +1085,11 @@
       cursor: not-allowed !important;
     }
     
-    /* Custom Modal Dialog Box Overlay */
+    /* Custom Modal Dialog Box Overlay — contained within #app-container */
     .custom-dialog-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
       background: rgba(0, 0, 0, 0.4);
       backdrop-filter: blur(5px);
       -webkit-backdrop-filter: blur(5px);
@@ -1681,6 +1679,18 @@
     </div>
 
 
+
+    <!-- Custom Modal Dialogs -->
+    <div id="custom-dialog-overlay" class="custom-dialog-overlay" style="display: none;">
+      <div class="custom-dialog-box">
+        <div id="custom-dialog-title" class="custom-dialog-title">Alert</div>
+        <div id="custom-dialog-message" class="custom-dialog-message">Message</div>
+        <div class="custom-dialog-buttons">
+          <button id="custom-dialog-cancel" class="btn-dialog-secondary">Cancel</button>
+          <button id="custom-dialog-ok" class="btn-dialog-primary">OK</button>
+        </div>
+      </div>
+    </div>
 
   </div>
 
@@ -2885,17 +2895,5 @@
     
     window.initCustomSelects = initCustomSelects;
   </script>
-
-  <!-- Custom Modal Dialogs -->
-  <div id="custom-dialog-overlay" class="custom-dialog-overlay" style="display: none;">
-    <div class="custom-dialog-box">
-      <div id="custom-dialog-title" class="custom-dialog-title">Alert</div>
-      <div id="custom-dialog-message" class="custom-dialog-message">Message</div>
-      <div class="custom-dialog-buttons">
-        <button id="custom-dialog-cancel" class="btn-dialog-secondary">Cancel</button>
-        <button id="custom-dialog-ok" class="btn-dialog-primary">OK</button>
-      </div>
-    </div>
-  </div>
 </body>
 </html>

@@ -817,10 +817,11 @@
       box-shadow: 0 0 8px var(--note-accent-light);
     }
     
-    /* Dialog Overlay */
+    /* Dialog Overlay — contained within #note-card, not the body padding gutter */
     .dialog-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
       background: rgba(0, 0, 0, 0.4);
       backdrop-filter: blur(4px);
       -webkit-backdrop-filter: blur(4px);
@@ -1263,23 +1264,19 @@
     <!-- Active formatting indicators container -->
     <div id="active-formats-indicator" class="no-drag"></div>
 
-
-
-  </div>
-
-  </div>
-
-  <!-- Save Title Dialog Overlay -->
-  <div id="save-dialog-overlay" class="dialog-overlay">
-    <div class="dialog-card">
-      <h3>Name Your Note</h3>
-      <p>Give this note a title to save it permanently.</p>
-      <input type="text" id="dialog-title-input" placeholder="Enter note title..." />
-      <div class="dialog-actions">
-        <button id="dialog-cancel-btn" class="btn-dialog-secondary">Cancel</button>
-        <button id="dialog-save-btn" class="btn-dialog-primary">Save Note</button>
+    <!-- Save Title Dialog Overlay -->
+    <div id="save-dialog-overlay" class="dialog-overlay">
+      <div class="dialog-card">
+        <h3>Name Your Note</h3>
+        <p>Give this note a title to save it permanently.</p>
+        <input type="text" id="dialog-title-input" placeholder="Enter note title..." />
+        <div class="dialog-actions">
+          <button id="dialog-cancel-btn" class="btn-dialog-secondary">Cancel</button>
+          <button id="dialog-save-btn" class="btn-dialog-primary">Save Note</button>
+        </div>
       </div>
     </div>
+
   </div>
 
   <script>
