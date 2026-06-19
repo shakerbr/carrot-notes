@@ -330,7 +330,7 @@ fn open_note_window(
     y: Option<f64>,
     width: Option<f64>,
     height: Option<f64>,
-    pinned: Option<bool>,
+    always_on_top: Option<bool>,
 ) -> Result<(), String> {
     let label = format!("note_{}", id);
 
@@ -351,7 +351,7 @@ fn open_note_window(
     .title("CarrotNote")
     .inner_size(w, h)
     .min_inner_size(180.0, 150.0)
-    .decorations(true)
+    .decorations(false)
     .transparent(true)
     .resizable(true)
     .skip_taskbar(true);
@@ -359,8 +359,8 @@ fn open_note_window(
         win_builder = win_builder.position(px, py);
     }
 
-    if let Some(p) = pinned {
-        win_builder = win_builder.always_on_top(p);
+    if let Some(aot) = always_on_top {
+        win_builder = win_builder.always_on_top(aot);
     }
 
     let win = win_builder.build().map_err(|e| e.to_string())?;
@@ -380,8 +380,8 @@ fn open_note_window(
         use gtk::prelude::*;
         if let Ok(gtk_window) = win.gtk_window() {
             gtk_window.set_type_hint(gtk::gdk::WindowTypeHint::Utility);
-            if let Some(p) = pinned {
-                gtk_window.set_keep_above(p);
+            if let Some(aot) = always_on_top {
+                gtk_window.set_keep_above(aot);
             }
         }
     }

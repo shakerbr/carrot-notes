@@ -21,6 +21,13 @@
       --note-text: #5C2D00;
       --note-accent: #FF7A00;
       --note-accent-light: rgba(255, 122, 0, 0.1);
+
+      --resize-gutter: 10px;
+      --motion-duration-fast: 0.15s;
+      --motion-duration: 0.2s;
+      --motion-duration-slow: 0.3s;
+      --motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
+      --motion-ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     * {
@@ -43,18 +50,41 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      padding: var(--resize-gutter);
+      box-sizing: border-box;
     }
+
+    /* External resize handles — outside the visible card, in the transparent gutter */
+    .window-resize-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      pointer-events: none;
+    }
+    .window-resize-handle {
+      position: absolute;
+      pointer-events: auto;
+    }
+    .resize-n  { top: 0; left: 12px; right: 12px; height: var(--resize-gutter); cursor: n-resize; }
+    .resize-s  { bottom: 0; left: 12px; right: 12px; height: var(--resize-gutter); cursor: s-resize; }
+    .resize-w  { left: 0; top: 12px; bottom: 12px; width: var(--resize-gutter); cursor: w-resize; }
+    .resize-e  { right: 0; top: 12px; bottom: 12px; width: var(--resize-gutter); cursor: e-resize; }
+    .resize-nw { top: 0; left: 0; width: 14px; height: 14px; cursor: nw-resize; }
+    .resize-ne { top: 0; right: 0; width: 14px; height: 14px; cursor: ne-resize; }
+    .resize-sw { bottom: 0; left: 0; width: 14px; height: 14px; cursor: sw-resize; }
+    .resize-se { bottom: 0; right: 0; width: 14px; height: 14px; cursor: se-resize; }
 
     /* Outer Wrapper representing the physical sticky card */
     #note-card {
       flex: 1;
+      min-height: 0;
       display: flex;
       flex-direction: column;
       border-radius: 8px;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 6px rgba(0, 0, 0, 0.05);
       border: 1px solid rgba(0, 0, 0, 0.05);
       overflow: hidden;
-      transition: background 0.2s, color 0.2s;
+      transition: background var(--motion-duration) var(--motion-ease), color var(--motion-duration) var(--motion-ease);
       position: relative;
       background: var(--note-bg);
       color: var(--note-text);
@@ -112,7 +142,7 @@
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all var(--motion-duration-fast) var(--motion-ease);
     }
     
     #note-card.theme-dark .btn-icon {
@@ -175,20 +205,17 @@
       background: transparent;
     }
     .note-editor::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.15);
+      background-color: rgba(0, 0, 0, 0.15);
       border-radius: 6px;
       border: 3px solid transparent;
       background-clip: padding-box;
+      transition: background-color var(--motion-duration) var(--motion-ease);
     }
     #note-card.theme-dark .note-editor::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.2);
-      border: 3px solid transparent;
-      background-clip: padding-box;
+      background-color: rgba(255, 255, 255, 0.2);
     }
     .note-editor::-webkit-scrollbar-thumb:hover {
-      background: var(--note-accent) !important;
-      border: 3px solid transparent;
-      background-clip: padding-box;
+      background-color: var(--note-accent) !important;
     }
 
     /* Theme color schemes matching dashboard */
@@ -254,7 +281,7 @@
       border-radius: 50%;
       cursor: pointer;
       border: 1px solid rgba(0, 0, 0, 0.08);
-      transition: transform 0.15s;
+      transition: transform var(--motion-duration-fast) var(--motion-ease);
     }
     .color-dot:hover {
       transform: scale(1.3);
@@ -284,7 +311,7 @@
       color: rgba(0, 0, 0, 0.4);
       border-radius: 2px;
       font-weight: bold;
-      transition: background 0.15s;
+      transition: background var(--motion-duration-fast) var(--motion-ease);
     }
     #note-card.theme-dark .format-btn {
       color: rgba(255, 255, 255, 0.5);
@@ -345,7 +372,7 @@
       border-radius: 0.2em;
       outline: none;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all var(--motion-duration) var(--motion-ease);
       background: transparent;
       margin: 0;
       z-index: 5;
@@ -411,7 +438,7 @@
       color: inherit;
       padding: 2px 4px;
       outline: none;
-      transition: all 0.15s;
+      transition: all var(--motion-duration-fast) var(--motion-ease);
       flex: 1;
       min-width: 40px;
     }
@@ -463,7 +490,7 @@
       justify-content: center;
       background: rgba(0, 0, 0, 0.02);
       border-bottom: 1px dashed rgba(0, 0, 0, 0.05);
-      animation: subToolbarSlide 0.15s ease-out;
+      animation: subToolbarSlide var(--motion-duration-fast) var(--motion-ease);
     }
     #note-card.theme-dark #sub-toolbar {
       background: rgba(255, 255, 255, 0.02);
@@ -481,16 +508,30 @@
       display: none;
     }
 
-    /* Narrow layout overrides */
-    .narrow-layout #title-container {
-      display: none;
+    #more-btn.unsaved {
+      color: var(--note-accent) !important;
+      box-shadow: 0 0 8px var(--note-accent-light);
     }
+
+    /* Narrow layout: collapse tool actions into the ⋮ menu; keep title visible */
     .narrow-layout #more-btn {
       display: flex;
     }
     .narrow-layout .header-controls {
-      flex: 1;
-      justify-content: flex-end;
+      flex-shrink: 0;
+    }
+
+    /* Very narrow: hide brand logo to give the title more room */
+    .very-narrow-layout .brand {
+      display: none;
+    }
+    .very-narrow-layout #title-container {
+      min-width: 0;
+    }
+
+    /* Extremely narrow: hide title text, show ⋮ menu only */
+    .tiny-layout #title-container {
+      display: none;
     }
     
     /* Dropdowns */
@@ -514,7 +555,7 @@
       min-width: 150px;
       max-height: calc(100vh - 70px);
       overflow-y: auto;
-      animation: dropdownFadeIn 0.15s ease-out;
+      animation: dropdownFadeIn var(--motion-duration-fast) var(--motion-ease);
     }
     .dropdown-menu::-webkit-scrollbar {
       width: 4px;
@@ -523,11 +564,12 @@
       background: transparent;
     }
     .dropdown-menu::-webkit-scrollbar-thumb {
-      background: var(--note-accent-light);
+      background-color: var(--note-accent-light);
       border-radius: 4px;
+      transition: background-color var(--motion-duration) var(--motion-ease);
     }
     .dropdown-menu::-webkit-scrollbar-thumb:hover {
-      background: var(--note-accent);
+      background-color: var(--note-accent);
     }
     #note-card.theme-dark .dropdown-menu {
       background: rgba(45, 45, 53, 0.95);
@@ -621,7 +663,7 @@
       border-radius: 50%;
       margin: 0;
       border: 1px solid rgba(0, 0, 0, 0.15);
-      transition: transform 0.15s;
+      transition: transform var(--motion-duration-fast) var(--motion-ease);
     }
     .narrow-layout .color-menu .color-option-dot:hover {
       transform: scale(1.15);
@@ -661,7 +703,7 @@
       padding: 6px 12px;
       font-size: 13px;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: background var(--motion-duration-fast) var(--motion-ease);
       border-radius: 4px;
       margin: 1px 0;
     }
@@ -687,7 +729,7 @@
       border: 1px solid rgba(0, 0, 0, 0.08);
       border-radius: 4px;
       cursor: pointer;
-      transition: all 0.15s;
+      transition: all var(--motion-duration-fast) var(--motion-ease);
       background: rgba(0, 0, 0, 0.02);
       text-align: center;
       min-width: 26px;
@@ -715,7 +757,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      transition: background 0.15s;
+      transition: background var(--motion-duration-fast) var(--motion-ease);
       gap: 12px;
       border-radius: 4px;
       margin: 1px 0;
@@ -748,7 +790,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      transition: background 0.15s;
+      transition: background var(--motion-duration-fast) var(--motion-ease);
       border-radius: 4px;
       margin: 1px 0;
     }
@@ -774,7 +816,6 @@
     /* Save indicator and button highlight */
     #save-btn.unsaved {
       color: var(--note-accent) !important;
-      background: var(--note-accent-light) !important;
       box-shadow: 0 0 8px var(--note-accent-light);
     }
     
@@ -801,7 +842,7 @@
       flex-direction: column;
       gap: 12px;
       border: 1px solid rgba(0,0,0,0.08);
-      animation: dialogScaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      animation: dialogScaleIn var(--motion-duration) var(--motion-ease-bounce);
     }
     #note-card.theme-dark .dialog-card {
       background: #2d2d35;
@@ -900,7 +941,7 @@
       border-radius: 6px;
       cursor: pointer;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      transition: all 0.15s ease;
+      transition: all var(--motion-duration-fast) var(--motion-ease) ease;
     }
     .format-pill:hover {
       background: #ff4d4d;
@@ -916,33 +957,54 @@
       bottom: 8px;
       left: 50%;
       transform: translateX(-50%) translateY(10px);
-      background: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      color: white;
-      padding: 8px 16px;
-      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--note-bg);
+      color: var(--note-text);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-family: var(--font-ui);
       font-size: 11px;
-      font-weight: 500;
+      font-weight: 600;
       z-index: 1000;
       opacity: 0;
       pointer-events: none;
-      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      transition: all var(--motion-duration-slow) var(--motion-ease-bounce);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.06);
+      border: 1px solid var(--note-accent);
+      white-space: nowrap;
+    }
+    #format-toast::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--note-accent);
+      flex-shrink: 0;
+      box-shadow: 0 0 6px var(--note-accent-light);
     }
     #format-toast.show {
       opacity: 1;
       transform: translateX(-50%) translateY(0);
     }
     #note-card.theme-dark #format-toast {
-      background: rgba(255, 255, 255, 0.8);
-      color: #121215;
-      border-color: rgba(0, 0, 0, 0.05);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.06);
     }
   </style>
 </head>
 <body>
+
+  <div class="window-resize-layer" aria-hidden="true">
+    <div class="window-resize-handle resize-n" data-direction="North"></div>
+    <div class="window-resize-handle resize-s" data-direction="South"></div>
+    <div class="window-resize-handle resize-w" data-direction="West"></div>
+    <div class="window-resize-handle resize-e" data-direction="East"></div>
+    <div class="window-resize-handle resize-nw" data-direction="NorthWest"></div>
+    <div class="window-resize-handle resize-ne" data-direction="NorthEast"></div>
+    <div class="window-resize-handle resize-sw" data-direction="SouthWest"></div>
+    <div class="window-resize-handle resize-se" data-direction="SouthEast"></div>
+  </div>
 
   <!-- Floating Sticky Note Card -->
   <div id="note-card" class="theme-orange">
@@ -1173,21 +1235,15 @@
         <span class="ctrl-separator"></span>
 
         <!-- Always on Top toggle -->
-        <button id="pin-btn" class="btn-icon no-drag" title="Always on Top">
+        <button id="always-top-btn" class="btn-icon no-drag" title="Always on Top">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="17" x2="12" y2="22"></line>
-            <path d="M5 17h14v-1.76a2 2 0 0 0-.44-1.24l-2.78-3.55A2 2 0 0 1 15 9.21V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v4.21a2 2 0 0 1-.78 1.24L5.44 14a2 2 0 0 0-.44 1.24V17z"></path>
+            <rect x="3" y="8" width="18" height="13" rx="2"></rect>
+            <path d="M12 2v6"></path>
+            <path d="M8 5l4-3 4 3"></path>
           </svg>
         </button>
 
-        <!-- Minimize -->
-        <button id="min-btn" class="btn-icon no-drag" title="Minimize">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-        </button>
-
-        <!-- Close / Archive -->
+        <!-- Close note window -->
         <button id="close-btn" class="btn-icon btn-close no-drag" title="Close note window">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -1238,8 +1294,8 @@
 
     let noteCardEl = document.getElementById('note-card');
     let editorEl = document.getElementById('editor');
-    let pinBtn = document.getElementById('pin-btn');
-    let minBtn = document.getElementById('min-btn');
+    let alwaysTopBtn = document.getElementById('always-top-btn');
+    let moreBtn = document.getElementById('more-btn');
     let closeBtn = document.getElementById('close-btn');
     let saveBtn = document.getElementById('save-btn');
     let lockBtn = document.getElementById('lock-btn');
@@ -1248,7 +1304,7 @@
 
     let notes = [];
     let noteData = null;
-    let isPinned = false;
+    let isAlwaysOnTop = false;
     let isLocked = false;
     let appWindow = null;
 
@@ -1277,6 +1333,19 @@
       appWindow = getCurrentWindow();
     }
 
+    function setupWindowResizeHandles() {
+      if (!appWindow) return;
+      document.querySelectorAll('.window-resize-handle').forEach(handle => {
+        handle.addEventListener('mousedown', (e) => {
+          if (e.buttons !== 1) return;
+          e.preventDefault();
+          e.stopPropagation();
+          const direction = handle.getAttribute('data-direction');
+          appWindow.startResizeDragging(direction).catch(console.error);
+        });
+      });
+    }
+
     // Initialize Note State
     document.addEventListener('DOMContentLoaded', async () => {
       // 1. Setup programmatic dragging listener to bypass Wayland drag limits
@@ -1286,8 +1355,7 @@
             appWindow.startDragging();
           }
         });
-
-
+        setupWindowResizeHandles();
       }
 
       // Load Settings from backend if available
@@ -1315,6 +1383,7 @@
           theme: settings.defaultColor || 'theme-orange',
           rotation: 0,
           pinned: false,
+          alwaysOnTop: false,
           isOpen: true,
           isTemporary: true
         };
@@ -1435,8 +1504,11 @@
       isLocked = settings.defaultReadOnly ? true : (noteData.readOnly || false);
       updateReadOnlyUI();
 
-      isPinned = noteData.pinned || false;
-      updatePinUI();
+      isAlwaysOnTop = noteData.alwaysOnTop || false;
+      updateAlwaysOnTopUI();
+      if (appWindow && invoke && isAlwaysOnTop) {
+        invoke('set_always_on_top', { alwaysOnTop: true }).catch(console.error);
+      }
 
       // Hook format checklist checkboxes listeners
       attachChecklistListeners();
@@ -1462,10 +1534,13 @@
             // Update pin/always-on-top if changed
             if (updatedNote.pinned !== noteData.pinned) {
               noteData.pinned = updatedNote.pinned;
-              isPinned = updatedNote.pinned;
-              updatePinUI();
+            }
+            if (updatedNote.alwaysOnTop !== noteData.alwaysOnTop) {
+              noteData.alwaysOnTop = updatedNote.alwaysOnTop;
+              isAlwaysOnTop = updatedNote.alwaysOnTop || false;
+              updateAlwaysOnTopUI();
               if (appWindow && invoke) {
-                invoke('set_always_on_top', { alwaysOnTop: isPinned }).catch(console.error);
+                invoke('set_always_on_top', { alwaysOnTop: isAlwaysOnTop }).catch(console.error);
               }
             }
             // Update readOnly if changed
@@ -1493,9 +1568,12 @@
         const headerControls = document.querySelector('.header-controls');
         const subToolbar = document.getElementById('sub-toolbar');
         const actionsList = document.getElementById('actions-list');
-        const moreBtn = document.getElementById('more-btn');
-        
-        if (width < 320) {
+        const moreBtnEl = document.getElementById('more-btn');
+
+        noteCardEl.classList.toggle('very-narrow-layout', width < 220);
+        noteCardEl.classList.toggle('tiny-layout', width < 160);
+
+        if (width < 300) {
           noteCardEl.classList.add('narrow-layout');
           if (actionsList && actionsList.parentElement !== subToolbar) {
             subToolbar.appendChild(actionsList);
@@ -1504,7 +1582,7 @@
           noteCardEl.classList.remove('narrow-layout');
           subToolbar.classList.remove('show');
           if (actionsList && actionsList.parentElement !== headerControls) {
-            headerControls.insertBefore(actionsList, moreBtn);
+            headerControls.insertBefore(actionsList, moreBtnEl);
           }
         }
       };
@@ -1888,22 +1966,22 @@
       }
     }
 
-    // Pin window toggle handler
-    pinBtn.addEventListener('click', () => {
-      isPinned = !isPinned;
-      noteData.pinned = isPinned;
-      updatePinUI();
+    // Always-on-top window toggle (independent from dashboard pin)
+    alwaysTopBtn.addEventListener('click', () => {
+      isAlwaysOnTop = !isAlwaysOnTop;
+      noteData.alwaysOnTop = isAlwaysOnTop;
+      updateAlwaysOnTopUI();
       if (appWindow && invoke) {
-        invoke('set_always_on_top', { alwaysOnTop: isPinned }).catch(console.error);
+        invoke('set_always_on_top', { alwaysOnTop: isAlwaysOnTop }).catch(console.error);
       }
       persistNotes();
     });
 
-    function updatePinUI() {
-      if (isPinned) {
-        pinBtn.classList.add('active');
+    function updateAlwaysOnTopUI() {
+      if (isAlwaysOnTop) {
+        alwaysTopBtn.classList.add('active');
       } else {
-        pinBtn.classList.remove('active');
+        alwaysTopBtn.classList.remove('active');
       }
     }
 
@@ -1960,10 +2038,12 @@
     // Save indicators
     function markUnsavedChanges() {
       saveBtn.classList.add('unsaved');
+      if (moreBtn) moreBtn.classList.add('unsaved');
     }
     
     function clearUnsavedChanges() {
       saveBtn.classList.remove('unsaved');
+      if (moreBtn) moreBtn.classList.remove('unsaved');
     }
 
     // Save button click
@@ -2025,10 +2105,6 @@
     }
 
     // Window controls
-    minBtn.addEventListener('click', () => {
-      if (appWindow) appWindow.minimize();
-    });
-
     closeBtn.addEventListener('click', () => {
       // Close window. Rust backend event handles the isOpen setting update
       if (appWindow) appWindow.close();
@@ -2352,6 +2428,28 @@
       }
     }
     
+    function isEditorFocused() {
+      const active = document.activeElement;
+      if (active === editorEl || editorEl.contains(active)) return true;
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0) {
+        const node = sel.anchorNode;
+        if (node && editorEl.contains(node.nodeType === Node.TEXT_NODE ? node.parentNode : node)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function syncEditorAfterEdit() {
+      noteData.content = editorEl.innerHTML;
+      if (settings.autosave) {
+        persistNotes();
+      } else {
+        markUnsavedChanges();
+      }
+    }
+
     // Check keybindings
     document.addEventListener('keydown', (e) => {
       const isFormatKey = e.ctrlKey && (
@@ -2359,7 +2457,10 @@
         e.key.toLowerCase() === 'i' || 
         e.key.toLowerCase() === 'u' || 
         e.key.toLowerCase() === 's' || 
-        (e.shiftKey && (e.key.toUpperCase() === 'L' || e.key.toUpperCase() === 'C' || e.key.toUpperCase() === 'X' || e.key.toUpperCase() === 'O'))
+        e.key.toLowerCase() === 'a' ||
+        e.key.toLowerCase() === 'z' ||
+        e.key.toLowerCase() === 'y' ||
+        (e.shiftKey && (e.key.toUpperCase() === 'L' || e.key.toUpperCase() === 'C' || e.key.toUpperCase() === 'X' || e.key.toUpperCase() === 'O' || e.key.toLowerCase() === 'z'))
       );
       
       if (isReadOnly()) {
@@ -2368,6 +2469,33 @@
         }
         return;
       }
+
+      const inEditor = isEditorFocused();
+      const inTitleInput = document.activeElement === noteTitleInput;
+
+      if (e.ctrlKey && e.key.toLowerCase() === 'a' && inEditor) {
+        e.preventDefault();
+        document.execCommand('selectAll');
+        return;
+      }
+
+      if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'z' && inEditor) {
+        e.preventDefault();
+        document.execCommand('undo');
+        syncEditorAfterEdit();
+        updateFormatStates();
+        return;
+      }
+
+      if (e.ctrlKey && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z')) && inEditor) {
+        e.preventDefault();
+        document.execCommand('redo');
+        syncEditorAfterEdit();
+        updateFormatStates();
+        return;
+      }
+
+      if (inTitleInput) return;
 
       if (e.ctrlKey && e.key.toLowerCase() === 'b') {
         e.preventDefault();

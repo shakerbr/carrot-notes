@@ -19,7 +19,7 @@
         "height": 600,
         "minWidth": 440,
         "minHeight": 480,
-        "decorations": true,
+        "decorations": false,
         "transparent": true,
         "resizable": true,
         "alwaysOnTop": false
