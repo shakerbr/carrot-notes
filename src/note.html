@@ -1372,10 +1372,17 @@
     document.addEventListener('DOMContentLoaded', async () => {
       // 1. Setup programmatic dragging listener to bypass Wayland drag limits
       if (appWindow) {
-        document.getElementById('drag-header').addEventListener('mousedown', (e) => {
+        const dragHeader = document.getElementById('drag-header');
+        dragHeader.addEventListener('mousedown', (e) => {
           if (!e.target.closest('.no-drag')) {
+            isWindowDragging = true;
+            const sel = window.getSelection();
+            if (sel) sel.removeAllRanges();
             appWindow.startDragging();
           }
+        });
+        document.addEventListener('mouseup', () => {
+          isWindowDragging = false;
         });
         setupWindowResizeHandles();
       }
@@ -2460,6 +2467,8 @@
       }
     }
     
+    let isWindowDragging = false;
+
     function isEditorFocused() {
       const active = document.activeElement;
       if (active === editorEl || editorEl.contains(active)) return true;
@@ -2599,16 +2608,26 @@
         });
         return;
       }
-      
+
       const formats = [
         { name: 'bold', label: 'Bold' },
         { name: 'italic', label: 'Italic' },
         { name: 'underline', label: 'Underline' },
         { name: 'strikeThrough', label: 'Strikethrough' }
       ];
-      
+
       const container = document.getElementById('active-formats-indicator');
       if (!container) return;
+
+      // Ignore stale command state while dragging the window or when focus left the editor
+      if (isWindowDragging || !isEditorFocused()) {
+        container.innerHTML = '';
+        formats.forEach(f => {
+          document.querySelector(`.format-option[data-cmd="${f.name}"]`)?.classList.remove('active');
+        });
+        return;
+      }
+
       container.innerHTML = '';
       
       formats.forEach(f => {
