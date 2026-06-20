@@ -44,7 +44,6 @@ pub fn using_native_wayland() -> bool {
 struct GnomeShellWindow {
     id: u32,
     title: Option<String>,
-    wm_class: Option<String>,
     pid: Option<i32>,
 }
 
