@@ -531,10 +531,21 @@
       border-color: rgba(255, 255, 255, 0.15);
     }
     
-    /* Temporary note — accent edit (pencil) icon until first save */
+    /* Temporary note — pulsing edit (pencil) icon instead of Temp badge */
+    @keyframes tempEditPulse {
+      0%, 100% {
+        color: var(--note-accent);
+        opacity: 1;
+      }
+      50% {
+        color: var(--note-accent);
+        opacity: 0.35;
+      }
+    }
+
     #edit-title-btn.temp-note-indicator {
       opacity: 1 !important;
-      color: var(--note-accent);
+      animation: tempEditPulse 1.6s ease-in-out infinite;
     }
 
     #edit-title-btn.temp-note-indicator svg {
@@ -900,6 +911,101 @@
       color: var(--note-accent) !important;
     }
     
+    /* Dialog Overlay — contained within #note-card, not the body padding gutter */
+    .dialog-overlay {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+    .dialog-card {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+      width: 90%;
+      max-width: 240px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      border: 1px solid rgba(0,0,0,0.08);
+      animation: dialogScaleIn var(--motion-duration) var(--motion-ease-bounce);
+    }
+    #note-card.theme-dark .dialog-card {
+      background: #2d2d35;
+      color: #e2e2ea;
+      border-color: rgba(255,255,255,0.08);
+    }
+    @keyframes dialogScaleIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .dialog-card h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--note-accent);
+    }
+    .dialog-card p {
+      font-size: 11px;
+      opacity: 0.8;
+      line-height: 1.4;
+    }
+    .dialog-card input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: 6px;
+      font-size: 12px;
+      outline: none;
+      background: transparent;
+      color: inherit;
+    }
+    #note-card.theme-dark .dialog-card input {
+      border-color: rgba(255,255,255,0.15);
+    }
+    .dialog-card input:focus {
+      border-color: var(--note-accent);
+    }
+    .dialog-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+    .btn-dialog-secondary {
+      background: transparent;
+      border: none;
+      padding: 6px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      border-radius: 4px;
+      color: inherit;
+    }
+    .btn-dialog-secondary:hover {
+      background: rgba(0,0,0,0.05);
+    }
+    #note-card.theme-dark .btn-dialog-secondary:hover {
+      background: rgba(255,255,255,0.08);
+    }
+    .btn-dialog-primary {
+      background: var(--note-accent);
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .btn-dialog-primary:hover {
+      opacity: 0.9;
+    }
+    
     /* Disabled State for Read Only */
     .controls-disabled {
       opacity: 0.4 !important;
@@ -1021,7 +1127,7 @@
       </div>
       <div id="title-container">
         <!-- Edit Title Button -->
-        <button id="edit-title-btn" class="btn-icon no-drag" title="Rename Note" style="width: 18px; height: 18px; padding: 0; background: transparent; border: none; cursor: pointer; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: inherit; opacity: 0.6;">
+        <button id="edit-title-btn" class="btn-icon no-drag" title="Temporary note — click to name and save" style="width: 18px; height: 18px; padding: 0; background: transparent; border: none; cursor: pointer; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: inherit; opacity: 0.6;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 11px; height: 11px;">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -1251,6 +1357,19 @@
     <!-- Active formatting indicators container -->
     <div id="active-formats-indicator" class="no-drag"></div>
 
+    <!-- Save Title Dialog Overlay -->
+    <div id="save-dialog-overlay" class="dialog-overlay">
+      <div class="dialog-card">
+        <h3>Name Your Note</h3>
+        <p>Give this note a title to save it permanently.</p>
+        <input type="text" id="dialog-title-input" placeholder="Enter note title..." />
+        <div class="dialog-actions">
+          <button id="dialog-cancel-btn" class="btn-dialog-secondary">Cancel</button>
+          <button id="dialog-save-btn" class="btn-dialog-primary">Save Note</button>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <script src="vendor/tiptap.bundle.js"></script>
@@ -1426,7 +1545,6 @@
         if (noteData) {
           noteData.content = getEditorContent();
         }
-        promoteTemporaryNote();
         persistNotes();
         clearUnsavedChanges();
       }, (settings.autosaveInterval || 5) * 1000);
@@ -1437,7 +1555,6 @@
       noteData.content = getEditorContent();
       if (settings.autosave) {
         clearTimeout(typingTimer);
-        promoteTemporaryNote();
         persistNotes();
         clearUnsavedChanges();
       } else {
@@ -1574,6 +1691,7 @@
         if (isCancellingTitleEdit) return;
         const newTitle = noteTitleInput.value.trim() || "Untitled Note";
         noteData.title = newTitle;
+        noteData.isTemporary = false;
         noteTitleDisplay.innerText = newTitle;
         noteTitleInput.value = newTitle;
         
@@ -1749,13 +1867,7 @@
       if (!editTitleBtn || !noteData) return;
       const isTemp = !!noteData.isTemporary;
       editTitleBtn.classList.toggle('temp-note-indicator', isTemp);
-      editTitleBtn.title = isTemp ? 'Unsaved draft — not included in sync until saved' : 'Rename Note';
-    }
-
-    function promoteTemporaryNote() {
-      if (!noteData || !noteData.isTemporary) return;
-      noteData.isTemporary = false;
-      updateTemporaryIndicator();
+      editTitleBtn.title = isTemp ? 'Temporary note — click to name and save' : 'Rename Note';
     }
 
     function isReadOnly() {
@@ -2154,10 +2266,54 @@
     window.saveNoteManual = function() {
       clearTimeout(typingTimer);
       noteData.content = getEditorContent();
-      promoteTemporaryNote();
+      
+      if (noteData.isTemporary) {
+        // Show save dialog overlay
+        const overlay = document.getElementById('save-dialog-overlay');
+        const input = document.getElementById('dialog-title-input');
+        input.value = noteData.title || "";
+        overlay.style.display = 'flex';
+        input.focus();
+        input.select();
+      } else {
+        // Just save immediately
+        persistNotes();
+        clearUnsavedChanges();
+      }
+    };
+
+    // Dialog action listeners
+    document.getElementById('dialog-cancel-btn').addEventListener('click', () => {
+      document.getElementById('save-dialog-overlay').style.display = 'none';
+    });
+
+    document.getElementById('dialog-save-btn').addEventListener('click', () => {
+      confirmSaveDialog();
+    });
+
+    document.getElementById('dialog-title-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        confirmSaveDialog();
+      } else if (e.key === 'Escape') {
+        document.getElementById('save-dialog-overlay').style.display = 'none';
+      }
+    });
+
+    function confirmSaveDialog() {
+      const input = document.getElementById('dialog-title-input');
+      const title = input.value.trim() || "Untitled Note";
+      
+      noteData.title = title;
+      noteData.isTemporary = false;
+      noteTitleInput.value = title;
+      document.getElementById('note-title-display').innerText = title;
+      updateTemporaryIndicator();
+      
+      document.getElementById('save-dialog-overlay').style.display = 'none';
+      
       persistNotes();
       clearUnsavedChanges();
-    };
+    }
 
     // Window controls
     closeBtn.addEventListener('click', () => {

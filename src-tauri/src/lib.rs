@@ -214,27 +214,7 @@ fn save_settings(app_handle: tauri::AppHandle, settings_json: String) -> Result<
     fs::write(path, settings_json).map_err(|e| e.to_string())
 }
 
-fn is_temporary_note(note: &serde_json::Value) -> bool {
-    note.get("isTemporary")
-        .and_then(|v| v.as_bool())
-        .unwrap_or(false)
-}
-
-fn filter_syncable_notes_json(notes_json: &str) -> Result<String, String> {
-    let notes_value: serde_json::Value = serde_json::from_str(notes_json)
-        .map_err(|e| format!("Failed to parse notes JSON: {}", e))?;
-    let filtered: Vec<serde_json::Value> = match notes_value.as_array() {
-        Some(arr) => arr
-            .iter()
-            .filter(|note| !is_temporary_note(note))
-            .cloned()
-            .collect(),
-        None => vec![],
-    };
-    serde_json::to_string(&filtered).map_err(|e| format!("Failed to serialize notes JSON: {}", e))
-}
-
-// Sync notes to local folder (temporary notes are excluded)
+// Sync notes to local folder
 #[tauri::command]
 fn sync_to_local_directory(dir_path: String, notes_json: String) -> Result<(), String> {
     if dir_path.trim().is_empty() {
@@ -246,14 +226,12 @@ fn sync_to_local_directory(dir_path: String, notes_json: String) -> Result<(), S
         fs::create_dir_all(&target_dir).map_err(|e| format!("Failed to create sync directory: {}", e))?;
     }
     
-    let sync_json = filter_syncable_notes_json(&notes_json)?;
-
-    // Write master backup (permanent notes only)
+    // Write master backup
     let backup_path = target_dir.join("carrotnotes_backup.json");
-    fs::write(&backup_path, &sync_json).map_err(|e| format!("Failed to write master backup file: {}", e))?;
+    fs::write(&backup_path, &notes_json).map_err(|e| format!("Failed to write master backup file: {}", e))?;
     
     // Parse notes and save markdown copies
-    let notes_value: serde_json::Value = serde_json::from_str(&sync_json)
+    let notes_value: serde_json::Value = serde_json::from_str(&notes_json)
         .map_err(|e| format!("Failed to parse notes JSON: {}", e))?;
         
     if let Some(notes_arr) = notes_value.as_array() {
@@ -384,20 +362,19 @@ fn close_note_window(app_handle: tauri::AppHandle, id: String) -> Result<(), Str
 }
 
 
-// Sync notes to cloud URL using HTTP POST (temporary notes are excluded)
+// Sync notes to cloud URL using HTTP POST
 #[tauri::command]
 async fn sync_notes_to_cloud(
     endpoint: String,
     token: String,
     notes_json: String,
 ) -> Result<String, String> {
-    let sync_json = filter_syncable_notes_json(&notes_json)?;
     let client = reqwest::Client::new();
     let res = client
         .post(&endpoint)
         .header("Authorization", format!("Bearer {}", token))
         .header("Content-Type", "application/json")
-        .body(sync_json)
+        .body(notes_json)
         .send()
         .await
         .map_err(|e| e.to_string())?;
