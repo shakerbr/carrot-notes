@@ -65,24 +65,61 @@
   function caretPosForBlock(block) {
     const { pos, node } = block;
     if (node.type.name === 'listItem' || node.type.name === 'taskItem') {
-      return Math.min(pos + 2, pos + node.nodeSize - 2);
+      const paraPos = pos + 1;
+      return Math.min(paraPos + 1, pos + node.nodeSize - 2);
     }
     return Math.min(pos + 1, pos + node.nodeSize - 1);
   }
 
+  function turnOffListFormat(editor, kind, caret) {
+    if (kind === 'paragraph') return true;
+
+    if (kind === 'checklist') {
+      if (editor.chain().focus().setTextSelection(caret).liftListItem('taskItem').run()) {
+        return true;
+      }
+      return editor.chain().focus().setTextSelection(caret).toggleTaskList().run();
+    }
+
+    if (editor.chain().focus().setTextSelection(caret).liftListItem('listItem').run()) {
+      return true;
+    }
+
+    if (kind === 'number') {
+      return editor.chain().focus().setTextSelection(caret).toggleOrderedList().run();
+    }
+    return editor.chain().focus().setTextSelection(caret).toggleBulletList().run();
+  }
+
+  function turnOnListFormat(editor, target) {
+    if (target === 'paragraph') return true;
+
+    const caret = editor.state.selection.from;
+    const chain = editor.chain().focus().setTextSelection(caret);
+
+    if (target === 'bullet') return chain.toggleBulletList().run();
+    if (target === 'number') return chain.toggleOrderedList().run();
+    if (target === 'checklist') return chain.toggleTaskList().run();
+    return false;
+  }
+
   function convertBlock(editor, block, target) {
     const kind = getItemKind(block);
-    const chain = editor.chain().focus().setTextSelection(caretPosForBlock(block));
+    const caret = caretPosForBlock(block);
 
-    if (kind === 'bullet') chain.toggleBulletList();
-    else if (kind === 'number') chain.toggleOrderedList();
-    else if (kind === 'checklist') chain.toggleTaskList();
+    if (target === 'paragraph') {
+      return turnOffListFormat(editor, kind, caret);
+    }
 
-    if (target === 'bullet') chain.toggleBulletList();
-    else if (target === 'number') chain.toggleOrderedList();
-    else if (target === 'checklist') chain.toggleTaskList();
+    if (kind === target) {
+      return turnOffListFormat(editor, kind, caret);
+    }
 
-    chain.run();
+    if (kind !== 'paragraph') {
+      turnOffListFormat(editor, kind, caret);
+    }
+
+    return turnOnListFormat(editor, target);
   }
 
   function apply(editor, format) {
