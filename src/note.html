@@ -257,14 +257,16 @@
       color: var(--note-accent);
     }
 
-    /* Task list / checklist */
+    /* Task list / checklist — class set on li via TaskItem HTMLAttributes */
+    .note-editor-host .ProseMirror .carrot-task-list,
     .note-editor-host .ProseMirror ul[data-type="taskList"] {
       list-style: none !important;
       padding-left: 0 !important;
       margin: 0.35em 0;
     }
 
-    .note-editor-host .ProseMirror li[data-type="taskItem"] {
+    .note-editor-host .ProseMirror .carrot-task-item,
+    .note-editor-host .ProseMirror ul[data-type="taskList"] > li {
       display: flex !important;
       flex-direction: row !important;
       align-items: flex-start !important;
@@ -274,33 +276,38 @@
       padding: 0;
     }
 
-    .note-editor-host .ProseMirror li[data-type="taskItem"]::marker {
+    .note-editor-host .ProseMirror .carrot-task-item::marker,
+    .note-editor-host .ProseMirror ul[data-type="taskList"] > li::marker {
       content: none !important;
     }
 
-    .note-editor-host .ProseMirror li[data-type="taskItem"] > label {
+    .note-editor-host .ProseMirror .carrot-task-item > label,
+    .note-editor-host .ProseMirror ul[data-type="taskList"] > li > label {
       display: inline-flex !important;
-      align-items: flex-start;
+      align-items: center;
       flex: 0 0 auto;
       margin: 0;
       padding: 0;
-      line-height: inherit;
+      line-height: 1;
       user-select: none !important;
       pointer-events: auto !important;
       cursor: pointer;
     }
 
-    /* Hide Tiptap's empty checkbox styler span */
-    .note-editor-host .ProseMirror li[data-type="taskItem"] > label > span {
+    .note-editor-host .ProseMirror .carrot-task-item > label > span,
+    .note-editor-host .ProseMirror ul[data-type="taskList"] > li > label > span {
       display: none !important;
     }
 
-    .note-editor-host .ProseMirror li[data-type="taskItem"] > label input[type="checkbox"] {
-      appearance: none;
-      -webkit-appearance: none;
-      display: inline-block;
+    .note-editor-host .ProseMirror .carrot-task-item > label input[type="checkbox"],
+    .note-editor-host .ProseMirror ul[data-type="taskList"] > li > label input[type="checkbox"] {
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      display: block !important;
       width: calc(1em - 0.2em);
       height: calc(1em - 0.2em);
+      min-width: calc(1em - 0.2em);
+      min-height: calc(1em - 0.2em);
       font-size: inherit;
       border: 0.08em solid var(--note-text);
       opacity: 0.7;
@@ -308,20 +315,22 @@
       outline: none;
       cursor: pointer;
       background: transparent;
-      margin: 0.15em 0 0 0;
+      margin: 0.12em 0 0 0;
       position: relative;
       box-sizing: border-box;
       pointer-events: auto !important;
       flex-shrink: 0;
     }
 
-    .note-editor-host .ProseMirror li[data-type="taskItem"] > label input[type="checkbox"]:checked {
+    .note-editor-host .ProseMirror .carrot-task-item > label input[type="checkbox"]:checked,
+    .note-editor-host .ProseMirror ul[data-type="taskList"] > li > label input[type="checkbox"]:checked {
       background-color: var(--note-accent);
       border-color: var(--note-accent);
       opacity: 1;
     }
 
-    .note-editor-host .ProseMirror li[data-type="taskItem"] > label input[type="checkbox"]:checked::after {
+    .note-editor-host .ProseMirror .carrot-task-item > label input[type="checkbox"]:checked::after,
+    .note-editor-host .ProseMirror ul[data-type="taskList"] > li > label input[type="checkbox"]:checked::after {
       content: "";
       width: 0.18em;
       height: 0.34em;
@@ -333,18 +342,21 @@
       left: 0.24em;
     }
 
-    .note-editor-host .ProseMirror li[data-type="taskItem"] > div {
+    .note-editor-host .ProseMirror .carrot-task-item > div,
+    .note-editor-host .ProseMirror ul[data-type="taskList"] > li > div {
       flex: 1 1 auto;
       min-width: 0;
     }
 
-    .note-editor-host .ProseMirror li[data-type="taskItem"] > div > p,
-    .note-editor-host .ProseMirror li[data-type="taskItem"] > p {
+    .note-editor-host .ProseMirror .carrot-task-item > div > p,
+    .note-editor-host .ProseMirror .carrot-task-item > p,
+    .note-editor-host .ProseMirror ul[data-type="taskList"] > li > div > p,
+    .note-editor-host .ProseMirror ul[data-type="taskList"] > li > p {
       margin: 0 !important;
-      flex: 1 1 auto;
     }
 
-    .note-editor-host .ProseMirror li[data-type="taskItem"][data-checked="true"] > div {
+    .note-editor-host .ProseMirror .carrot-task-item[data-checked="true"] > div,
+    .note-editor-host .ProseMirror li[data-checked="true"] > div {
       text-decoration: line-through;
       opacity: 0.6;
     }
@@ -1444,8 +1456,12 @@
         syncEditorContent();
         updateFormatStates();
       };
+      window.__carrotUpdateFormatStates = () => updateFormatStates();
 
-      const { Editor, StarterKit, Underline, TaskList, TaskItem, Placeholder, Markdown, CarrotShortcuts } = CarrotEditor;
+      const {
+        Editor, StarterKit, Underline, TaskList, TaskItem, Placeholder, Markdown,
+        CarrotShortcuts, CarrotInputRules, BulletListNoInput, OrderedListNoInput,
+      } = CarrotEditor;
 
       noteEditor = new Editor({
         element: editorHostEl,
@@ -1455,14 +1471,24 @@
         extensions: [
           StarterKit.configure({
             heading: { levels: [1, 2, 3] },
+            bulletList: false,
+            orderedList: false,
           }),
+          BulletListNoInput,
+          OrderedListNoInput,
           Underline,
-          TaskList,
-          TaskItem.configure({ nested: true }),
+          TaskList.configure({
+            HTMLAttributes: { class: 'carrot-task-list', 'data-type': 'taskList' },
+          }),
+          TaskItem.configure({
+            nested: true,
+            HTMLAttributes: { class: 'carrot-task-item', 'data-type': 'taskItem' },
+          }),
           Placeholder.configure({
             placeholder: 'Type thoughts here...',
           }),
           Markdown,
+          CarrotInputRules,
           CarrotShortcuts,
         ],
         editorProps: {
@@ -1480,6 +1506,9 @@
           updateFormatStates();
         },
         onBlur: () => {
+          updateFormatStates();
+        },
+        onTransaction: () => {
           updateFormatStates();
         },
       });
@@ -2399,6 +2428,18 @@
       strikeThrough: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 10px; height: 10px;"><path d="M16 4H9a3 3 0 0 0-2.83 4H19a3 3 0 0 1-2.83 4H7a4 4 0 0 0 4 4h7"></path><line x1="4" y1="12" x2="20" y2="12"></line></svg>`
     };
 
+    function getFormatActiveState() {
+      if (!noteEditor || !noteEditor.isFocused || isWindowDragging) {
+        return { bold: false, italic: false, underline: false, strikeThrough: false };
+      }
+      return {
+        bold: noteEditor.isActive('bold'),
+        italic: noteEditor.isActive('italic'),
+        underline: noteEditor.isActive('underline'),
+        strikeThrough: noteEditor.isActive('strike'),
+      };
+    }
+
     function updateFormatStates() {
       if (isReadOnly()) {
         document.getElementById('active-formats-indicator').innerHTML = '';
@@ -2429,14 +2470,7 @@
 
       container.innerHTML = '';
       
-      const active = noteEditor && noteEditor.isFocused && !isWindowDragging
-        ? {
-            bold: noteEditor.isActive('bold'),
-            italic: noteEditor.isActive('italic'),
-            underline: noteEditor.isActive('underline'),
-            strikeThrough: noteEditor.isActive('strike'),
-          }
-        : { bold: false, italic: false, underline: false, strikeThrough: false };
+      const active = getFormatActiveState();
       
       formats.forEach(f => {
         const isActive = !!active[f.name];
