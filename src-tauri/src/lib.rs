@@ -681,6 +681,126 @@ async fn restore_note_from_cloud(
     prepare_restored_note(note)
 }
 
+fn clear_directory_contents(dir: &Path) -> Result<usize, String> {
+    if !dir.exists() {
+        return Ok(0);
+    }
+
+    let mut removed = 0usize;
+    for entry in fs::read_dir(dir).map_err(|e| e.to_string())? {
+        let path = entry.map_err(|e| e.to_string())?.path();
+        if path.is_dir() {
+            fs::remove_dir_all(&path).map_err(|e| e.to_string())?;
+        } else {
+            fs::remove_file(&path).map_err(|e| e.to_string())?;
+        }
+        removed += 1;
+    }
+
+    Ok(removed)
+}
+
+#[tauri::command]
+fn clean_local_sync_trash(dir_path: String) -> Result<String, String> {
+    if dir_path.trim().is_empty() {
+        return Err("Directory path is empty".to_string());
+    }
+
+    let target_dir = resolve_path(&dir_path);
+    let deleted_dir = target_dir.join(DELETED_SUBDIR);
+    let removed = clear_directory_contents(&deleted_dir)?;
+
+    Ok(format!(
+        "Removed {} item(s) from local deleted folder",
+        removed
+    ))
+}
+
+#[tauri::command]
+fn remove_all_local_sync(dir_path: String) -> Result<String, String> {
+    if dir_path.trim().is_empty() {
+        return Err("Directory path is empty".to_string());
+    }
+
+    let target_dir = resolve_path(&dir_path);
+    if !target_dir.exists() {
+        return Ok("Local sync folder is already empty".to_string());
+    }
+
+    let mut removed = 0usize;
+
+    let backup_path = target_dir.join(BACKUP_FILENAME);
+    if backup_path.exists() {
+        fs::remove_file(&backup_path).map_err(|e| e.to_string())?;
+        removed += 1;
+    }
+
+    if let Ok(entries) = fs::read_dir(&target_dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_file() {
+                if path.extension().and_then(|ext| ext.to_str()) == Some("md") {
+                    fs::remove_file(&path).map_err(|e| e.to_string())?;
+                    removed += 1;
+                }
+            }
+        }
+    }
+
+    let deleted_dir = target_dir.join(DELETED_SUBDIR);
+    if deleted_dir.exists() {
+        removed += clear_directory_contents(&deleted_dir)?;
+        fs::remove_dir(&deleted_dir).ok();
+    }
+
+    Ok(format!("Removed all local sync content ({} items)", removed))
+}
+
+fn cloud_deleted_endpoint(endpoint: &str) -> String {
+    endpoint.trim_end_matches('/').to_string() + "/deleted"
+}
+
+fn apply_cloud_auth(
+    request: reqwest::RequestBuilder,
+    token: &str,
+) -> reqwest::RequestBuilder {
+    if token.trim().is_empty() {
+        request
+    } else {
+        request.header("Authorization", format!("Bearer {}", token))
+    }
+}
+
+#[tauri::command]
+async fn clean_cloud_sync_trash(endpoint: String, token: String) -> Result<String, String> {
+    if endpoint.trim().is_empty() {
+        return Err("Cloud endpoint URL is empty".to_string());
+    }
+
+    let delete_url = cloud_deleted_endpoint(&endpoint);
+    let client = reqwest::Client::new();
+    let request = apply_cloud_auth(client.delete(&delete_url), &token);
+    let res = request.send().await.map_err(|e| e.to_string())?;
+
+    let status = res.status();
+    let body = res.text().await.unwrap_or_default();
+
+    if status.is_success() {
+        Ok("Cloud deleted folder cleaned".to_string())
+    } else {
+        Err(format!(
+            "Cloud trash cleanup failed (Status {}): {}",
+            status, body
+        ))
+    }
+}
+
+#[tauri::command]
+async fn remove_all_cloud_sync(endpoint: String, token: String) -> Result<String, String> {
+    sync_notes_to_cloud(endpoint, token, "[]".to_string()).await?;
+    Ok("All notes removed from cloud sync".to_string())
+}
+
 // Cross-platform Always on Top setter, with Linux Wayland GTK WindowTypeHint utility fix
 #[tauri::command]
 fn set_always_on_top(window: tauri::Window, always_on_top: bool) -> Result<(), String> {
@@ -926,7 +1046,11 @@ pub fn run() {
             list_restorable_sync_notes,
             list_restorable_cloud_notes,
             restore_note_from_sync,
-            restore_note_from_cloud
+            restore_note_from_cloud,
+            clean_local_sync_trash,
+            remove_all_local_sync,
+            clean_cloud_sync_trash,
+            remove_all_cloud_sync
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

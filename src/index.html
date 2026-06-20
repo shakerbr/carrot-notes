@@ -744,6 +744,127 @@
       padding: 8px 0;
     }
 
+    .danger-zone-card {
+      border-color: rgba(220, 53, 69, 0.25);
+    }
+    body.dark-mode .danger-zone-card {
+      border-color: rgba(255, 107, 107, 0.25);
+    }
+    .danger-zone-card .section-title {
+      color: #dc3545;
+    }
+    body.dark-mode .danger-zone-card .section-title {
+      color: #ff6b6b;
+    }
+    .danger-zone-hint {
+      font-size: 11px;
+      opacity: 0.7;
+      line-height: 1.45;
+      margin: 0 0 14px;
+    }
+    .danger-zone-source {
+      padding: 12px 0;
+    }
+    .danger-zone-source + .danger-zone-source {
+      border-top: 1px solid rgba(220, 53, 69, 0.12);
+      margin-top: 4px;
+    }
+    body.dark-mode .danger-zone-source + .danger-zone-source {
+      border-top-color: rgba(255, 107, 107, 0.15);
+    }
+    .danger-zone-source-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      opacity: 0.75;
+      margin-bottom: 10px;
+    }
+    .danger-zone-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .btn-danger {
+      background: transparent;
+      color: #dc3545;
+      border: 1px solid rgba(220, 53, 69, 0.45);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--motion-duration-fast) var(--motion-ease);
+      text-align: left;
+    }
+    .btn-danger:hover {
+      background: rgba(220, 53, 69, 0.08);
+    }
+    body.dark-mode .btn-danger {
+      color: #ff6b6b;
+      border-color: rgba(255, 107, 107, 0.45);
+    }
+    body.dark-mode .btn-danger:hover {
+      background: rgba(255, 107, 107, 0.1);
+    }
+    .btn-danger strong {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 2px;
+    }
+    .btn-danger span {
+      display: block;
+      font-size: 10px;
+      font-weight: 500;
+      opacity: 0.75;
+    }
+
+    .custom-dialog-input-wrap {
+      display: none;
+      margin-bottom: 16px;
+    }
+    .custom-dialog-input-wrap.show {
+      display: block;
+    }
+    .custom-dialog-input-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      opacity: 0.8;
+    }
+    .custom-dialog-input {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--border-light);
+      border-radius: 6px;
+      font-size: 12px;
+      background: transparent;
+      color: inherit;
+      outline: none;
+      box-sizing: border-box;
+    }
+    body.dark-mode .custom-dialog-input {
+      border-color: var(--border-dark);
+    }
+    .custom-dialog-input:focus {
+      border-color: var(--primary-color);
+    }
+    .btn-dialog-danger {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-dialog-danger:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
     /* About Graphic center layout */
     .about-layout {
       display: flex;
@@ -1583,6 +1704,50 @@
         <div id="restore-status" class="sync-status">Status: Standby</div>
         <div id="restore-list" class="restore-list"></div>
       </div>
+
+      <!-- Danger Zone -->
+      <div class="settings-card danger-zone-card">
+        <div class="section-title">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <span>Danger Zone</span>
+        </div>
+
+        <p class="danger-zone-hint">Destructive actions for each sync source. These cannot be undone.</p>
+
+        <div class="danger-zone-source">
+          <div class="danger-zone-source-title">Local Folder</div>
+          <div class="danger-zone-actions">
+            <button class="btn-danger" onclick="runSyncDangerAction('local', 'trash')">
+              <strong>Clean Trash</strong>
+              <span>Permanently delete everything in the sync deleted folder.</span>
+            </button>
+            <button class="btn-danger" onclick="runSyncDangerAction('local', 'remove')">
+              <strong>Remove Everything</strong>
+              <span>Delete all synced notes, backup, and deleted folder contents.</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="danger-zone-source">
+          <div class="danger-zone-source-title">Cloud Server</div>
+          <div class="danger-zone-actions">
+            <button class="btn-danger" onclick="runSyncDangerAction('cloud', 'trash')">
+              <strong>Clean Trash</strong>
+              <span>Permanently delete archived notes on the cloud sync server.</span>
+            </button>
+            <button class="btn-danger" onclick="runSyncDangerAction('cloud', 'remove')">
+              <strong>Remove Everything</strong>
+              <span>Clear all notes from the cloud sync server.</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="danger-zone-status" class="sync-status">Status: Standby</div>
+      </div>
       
     </div>
 
@@ -1833,6 +1998,10 @@
       <div class="custom-dialog-box">
         <div id="custom-dialog-title" class="custom-dialog-title">Alert</div>
         <div id="custom-dialog-message" class="custom-dialog-message">Message</div>
+        <div id="custom-dialog-input-wrap" class="custom-dialog-input-wrap">
+          <label id="custom-dialog-input-label" class="custom-dialog-input-label" for="custom-dialog-input">Confirmation</label>
+          <input id="custom-dialog-input" class="custom-dialog-input" type="text" autocomplete="off" spellcheck="false" />
+        </div>
         <div class="custom-dialog-buttons">
           <button id="custom-dialog-cancel" class="btn-dialog-secondary">Cancel</button>
           <button id="custom-dialog-ok" class="btn-dialog-primary">OK</button>
@@ -3134,6 +3303,23 @@
     };
 
     // Custom alert/confirm Dialogs Implementation
+    function resetCustomDialogInput() {
+      const inputWrap = document.getElementById('custom-dialog-input-wrap');
+      const input = document.getElementById('custom-dialog-input');
+      const okBtn = document.getElementById('custom-dialog-ok');
+      if (inputWrap) inputWrap.classList.remove('show');
+      if (input) {
+        input.value = '';
+        input.oninput = null;
+        input.onkeydown = null;
+      }
+      if (okBtn) {
+        okBtn.className = 'btn-dialog-primary';
+        okBtn.textContent = 'OK';
+        okBtn.disabled = false;
+      }
+    }
+
     window.showCustomAlert = function(message, title = "Alert") {
       return new Promise((resolve) => {
         const overlay = document.getElementById('custom-dialog-overlay');
@@ -3142,6 +3328,7 @@
         const okBtn = document.getElementById('custom-dialog-ok');
         const cancelBtn = document.getElementById('custom-dialog-cancel');
         
+        resetCustomDialogInput();
         titleEl.innerText = title;
         msgEl.innerText = message;
         cancelBtn.style.display = 'none';
@@ -3150,6 +3337,7 @@
         const onOk = () => {
           okBtn.removeEventListener('click', onOk);
           overlay.style.display = 'none';
+          resetCustomDialogInput();
           resolve();
         };
         
@@ -3165,6 +3353,7 @@
         const okBtn = document.getElementById('custom-dialog-ok');
         const cancelBtn = document.getElementById('custom-dialog-cancel');
         
+        resetCustomDialogInput();
         titleEl.innerText = title;
         msgEl.innerText = message;
         cancelBtn.style.display = 'inline-block';
@@ -3174,6 +3363,7 @@
           okBtn.removeEventListener('click', onOk);
           cancelBtn.removeEventListener('click', onCancel);
           overlay.style.display = 'none';
+          resetCustomDialogInput();
           resolve(true);
         };
         
@@ -3181,12 +3371,146 @@
           okBtn.removeEventListener('click', onOk);
           cancelBtn.removeEventListener('click', onCancel);
           overlay.style.display = 'none';
+          resetCustomDialogInput();
           resolve(false);
         };
         
         okBtn.addEventListener('click', onOk);
         cancelBtn.addEventListener('click', onCancel);
       });
+    };
+
+    window.showTypedConfirm = function(message, title, requiredWord) {
+      return new Promise((resolve) => {
+        const overlay = document.getElementById('custom-dialog-overlay');
+        const titleEl = document.getElementById('custom-dialog-title');
+        const msgEl = document.getElementById('custom-dialog-message');
+        const okBtn = document.getElementById('custom-dialog-ok');
+        const cancelBtn = document.getElementById('custom-dialog-cancel');
+        const inputWrap = document.getElementById('custom-dialog-input-wrap');
+        const inputLabel = document.getElementById('custom-dialog-input-label');
+        const input = document.getElementById('custom-dialog-input');
+
+        resetCustomDialogInput();
+        titleEl.innerText = title;
+        msgEl.innerText = message;
+        cancelBtn.style.display = 'inline-block';
+        inputWrap.classList.add('show');
+        inputLabel.textContent = `Type "${requiredWord}" to confirm`;
+        input.value = '';
+        okBtn.textContent = 'Confirm';
+        okBtn.className = 'btn-dialog-danger';
+        okBtn.disabled = true;
+        overlay.style.display = 'flex';
+
+        const cleanup = () => {
+          okBtn.removeEventListener('click', onOk);
+          cancelBtn.removeEventListener('click', onCancel);
+          input.removeEventListener('input', checkInput);
+          input.removeEventListener('keydown', onKeydown);
+          overlay.style.display = 'none';
+          resetCustomDialogInput();
+        };
+
+        const checkInput = () => {
+          okBtn.disabled = input.value.trim() !== requiredWord;
+        };
+
+        const onKeydown = (e) => {
+          if (e.key === 'Enter' && !okBtn.disabled) {
+            e.preventDefault();
+            onOk();
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            onCancel();
+          }
+        };
+
+        const onOk = () => {
+          if (input.value.trim() !== requiredWord) return;
+          cleanup();
+          resolve(true);
+        };
+
+        const onCancel = () => {
+          cleanup();
+          resolve(false);
+        };
+
+        input.addEventListener('input', checkInput);
+        input.addEventListener('keydown', onKeydown);
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+        setTimeout(() => input.focus(), 0);
+      });
+    };
+
+    function setDangerZoneStatus(message, color = '') {
+      const statusEl = document.getElementById('danger-zone-status');
+      if (!statusEl) return;
+      statusEl.textContent = message;
+      statusEl.style.color = color;
+    }
+
+    window.runSyncDangerAction = async function(source, action) {
+      const isTrash = action === 'trash';
+      const sourceLabel = source === 'local' ? 'local folder sync' : 'cloud server sync';
+      const actionTitle = isTrash ? 'Clean Trash' : 'Remove Everything';
+      const confirmWord = isTrash ? 'clean' : 'delete';
+
+      const firstMessage = isTrash
+        ? `This will permanently delete all archived notes in the ${sourceLabel} deleted folder. This cannot be undone.`
+        : `This will permanently delete all synced notes from the ${sourceLabel} source, including backups and deleted archives. This cannot be undone.`;
+
+      if (!await showCustomConfirm(firstMessage, actionTitle)) return;
+
+      const typedMessage = isTrash
+        ? `You are about to clean the trash for ${sourceLabel}. Type "${confirmWord}" below to proceed.`
+        : `You are about to remove everything synced for ${sourceLabel}. Type "${confirmWord}" below to proceed.`;
+
+      if (!await showTypedConfirm(typedMessage, 'Final Confirmation', confirmWord)) return;
+
+      if (!invoke) {
+        await showCustomAlert('This action is only available in the desktop app.', 'Unavailable');
+        return;
+      }
+
+      setDangerZoneStatus('Status: Working...');
+
+      try {
+        let resultMessage = 'Action completed';
+
+        if (source === 'local') {
+          const dirPath = settings.localSync?.dir?.trim();
+          if (!dirPath) throw new Error('Missing local sync folder path');
+
+          if (isTrash) {
+            resultMessage = await invoke('clean_local_sync_trash', { dirPath });
+          } else {
+            resultMessage = await invoke('remove_all_local_sync', { dirPath });
+          }
+        } else {
+          const endpoint = settings.cloudSync?.endpoint?.trim();
+          const token = settings.cloudSync?.token?.trim() || '';
+          if (!endpoint) throw new Error('Missing cloud endpoint URL');
+
+          if (isTrash) {
+            resultMessage = await invoke('clean_cloud_sync_trash', { endpoint, token });
+          } else {
+            resultMessage = await invoke('remove_all_cloud_sync', { endpoint, token });
+          }
+        }
+
+        setDangerZoneStatus(`Status: ${resultMessage} - ${new Date().toLocaleTimeString()}`, '#3cd69e');
+
+        const restoreList = document.getElementById('restore-list');
+        if (restoreList && restoreList.innerHTML.trim()) {
+          await scanRestorableNotes();
+        }
+      } catch (err) {
+        setDangerZoneStatus(`Status: Error - ${err}`, '#ff4d4d');
+        await showCustomAlert(String(err), 'Action Failed');
+      }
     };
 
     // Custom Number Input Spinner functions
