@@ -62,6 +62,27 @@
     return items.sort((a, b) => a.pos - b.pos);
   }
 
+  function resolveBlockAtPos(state, pos) {
+    const clamped = Math.max(1, Math.min(pos + 1, state.doc.content.size - 1));
+    const $pos = state.doc.resolve(clamped);
+
+    for (let depth = $pos.depth; depth > 0; depth--) {
+      const node = $pos.node(depth);
+      if (node.type.name === 'taskItem' || node.type.name === 'listItem') {
+        return { node, pos: $pos.before(depth), parentNode: $pos.node(depth - 1) };
+      }
+      if (node.type.name === 'paragraph' && $pos.node(depth - 1).type.name === 'doc') {
+        return { node, pos: $pos.before(depth), parentNode: null };
+      }
+    }
+
+    const top = state.doc.nodeAt(pos);
+    if (top) {
+      return { node: top, pos, parentNode: null };
+    }
+    return null;
+  }
+
   function caretPosForBlock(block) {
     const { pos, node } = block;
     if (node.type.name === 'listItem' || node.type.name === 'taskItem') {
@@ -91,12 +112,19 @@
     return editor.chain().focus().setTextSelection(caret).toggleBulletList().run();
   }
 
-  function turnOnListFormat(editor, target) {
+  function turnOnListFormat(editor, target, caret) {
     if (target === 'paragraph') return true;
 
-    const caret = editor.state.selection.from;
     const chain = editor.chain().focus().setTextSelection(caret);
 
+    if (target === 'bullet') return chain.toggleBulletList().run();
+    if (target === 'number') return chain.toggleOrderedList().run();
+    if (target === 'checklist') return chain.toggleTaskList().run();
+    return false;
+  }
+
+  function applyListCommandToSelection(editor, target, selFrom, selTo) {
+    const chain = editor.chain().focus().setTextSelection({ from: selFrom, to: selTo });
     if (target === 'bullet') return chain.toggleBulletList().run();
     if (target === 'number') return chain.toggleOrderedList().run();
     if (target === 'checklist') return chain.toggleTaskList().run();
@@ -119,7 +147,7 @@
       turnOffListFormat(editor, kind, caret);
     }
 
-    return turnOnListFormat(editor, target);
+    return turnOnListFormat(editor, target, caret);
   }
 
   function apply(editor, format) {
@@ -136,15 +164,21 @@
     const target =
       kinds.every((k) => k === format) && format !== 'paragraph' ? 'paragraph' : format;
 
-    for (let i = 0; i < initialBlocks.length; i++) {
-      if (!empty) {
-        editor.commands.setTextSelection({ from: selFrom, to: selTo });
+    if (target === 'paragraph') {
+      for (const snapshot of [...initialBlocks].sort((a, b) => b.pos - a.pos)) {
+        const block = resolveBlockAtPos(editor.state, snapshot.pos);
+        if (!block || getItemKind(block) === 'paragraph') continue;
+        convertBlock(editor, block, target);
       }
-
-      const blocks = collectSelectedBlocks(editor.state);
-      if (!blocks.length) break;
-
-      convertBlock(editor, blocks[blocks.length - 1], target);
+    } else if (kinds.every((k) => k === 'paragraph')) {
+      applyListCommandToSelection(editor, target, selFrom, selTo);
+    } else {
+      for (const snapshot of [...initialBlocks].sort((a, b) => b.pos - a.pos)) {
+        const block = resolveBlockAtPos(editor.state, snapshot.pos);
+        if (!block) continue;
+        if (getItemKind(block) === target) continue;
+        convertBlock(editor, block, target);
+      }
     }
 
     if (!empty) {
