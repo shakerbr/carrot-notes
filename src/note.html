@@ -39,6 +39,20 @@
       -moz-osx-font-smoothing: grayscale;
     }
 
+    /* Editor must allow text selection and checkbox clicks */
+    .note-editor-host,
+    .note-editor-host .ProseMirror,
+    .note-editor-host .ProseMirror * {
+      user-select: text !important;
+    }
+
+    .note-editor-host .ProseMirror li[data-type="taskItem"] > label,
+    .note-editor-host .ProseMirror li[data-type="taskItem"] > label input[type="checkbox"] {
+      user-select: none !important;
+      pointer-events: auto !important;
+      cursor: pointer;
+    }
+
     html {
       background: transparent !important;
     }
@@ -1315,6 +1329,7 @@
   </div>
 
   <script src="vendor/tiptap.bundle.js"></script>
+  <script src="js/editor-line-format.js"></script>
   <script src="js/markdown-helpers.js"></script>
   <script>
     const invoke = window.__TAURI__ ? window.__TAURI__.core.invoke : null;
@@ -1395,7 +1410,17 @@
     function initWysiwygEditor(initialContent) {
       if (!window.CarrotEditor || !editorHostEl) return;
 
-      const { Editor, StarterKit, Underline, TaskList, TaskItem, Placeholder, Markdown } = CarrotEditor;
+      window.__carrotSave = () => {
+        if (!isReadOnly()) saveNoteManual();
+      };
+      window.__carrotApplyLineFormat = (format) => {
+        if (isReadOnly() || !noteEditor || !window.CarrotLineFormat) return;
+        CarrotLineFormat.apply(noteEditor, format);
+        syncEditorContent();
+        updateFormatStates();
+      };
+
+      const { Editor, StarterKit, Underline, TaskList, TaskItem, Placeholder, Markdown, CarrotShortcuts } = CarrotEditor;
 
       noteEditor = new Editor({
         element: editorHostEl,
@@ -1413,6 +1438,7 @@
             placeholder: 'Type thoughts here...',
           }),
           Markdown,
+          CarrotShortcuts,
         ],
         editorProps: {
           attributes: {
@@ -2223,35 +2249,40 @@
     // WYSIWYG formatting (Notion-style — no visible markdown syntax)
     window.formatDoc = function(cmd) {
       if (isReadOnly() || !noteEditor) return;
-      const chain = noteEditor.chain().focus();
-      switch (cmd) {
-        case 'bold':
-          chain.toggleBold().run();
-          break;
-        case 'italic':
-          chain.toggleItalic().run();
-          break;
-        case 'underline':
-          chain.toggleUnderline().run();
-          break;
-        case 'strikeThrough':
-          chain.toggleStrike().run();
-          break;
-        case 'insertUnorderedList':
-          chain.toggleBulletList().run();
-          break;
-        case 'insertOrderedList':
-          chain.toggleOrderedList().run();
-          break;
-        case 'insertChecklist':
-          chain.toggleTaskList().run();
-          break;
-        case 'removeFormat':
-          chain.unsetAllMarks().run();
-          break;
-        default:
-          return;
+
+      const lineFormats = {
+        insertUnorderedList: 'bullet',
+        insertOrderedList: 'number',
+        insertChecklist: 'checklist',
+      };
+
+      if (lineFormats[cmd]) {
+        if (window.CarrotLineFormat) {
+          CarrotLineFormat.apply(noteEditor, lineFormats[cmd]);
+        }
+      } else {
+        const chain = noteEditor.chain().focus();
+        switch (cmd) {
+          case 'bold':
+            chain.toggleBold().run();
+            break;
+          case 'italic':
+            chain.toggleItalic().run();
+            break;
+          case 'underline':
+            chain.toggleUnderline().run();
+            break;
+          case 'strikeThrough':
+            chain.toggleStrike().run();
+            break;
+          case 'removeFormat':
+            chain.unsetAllMarks().run();
+            break;
+          default:
+            return;
+        }
       }
+
       syncEditorContent();
       updateFormatStates();
     };
@@ -2299,51 +2330,10 @@
       return !!(noteEditor && noteEditor.isFocused);
     }
 
-    // Keyboard shortcuts for formatting (Tiptap handles undo/redo/select-all)
+    // Global save shortcut fallback when editor is not focused
     document.addEventListener('keydown', (e) => {
-      const isFormatKey = e.ctrlKey && (
-        e.key.toLowerCase() === 'b' || 
-        e.key.toLowerCase() === 'i' || 
-        e.key.toLowerCase() === 'u' || 
-        e.key.toLowerCase() === 's' || 
-        (e.shiftKey && (e.key.toUpperCase() === 'L' || e.key.toUpperCase() === 'C' || e.key.toUpperCase() === 'X' || e.key.toUpperCase() === 'O'))
-      );
-      
-      if (isReadOnly()) {
-        if (isFormatKey) {
-          e.preventDefault();
-        }
-        return;
-      }
-
-      const inEditor = isEditorFocused();
-      const inTitleInput = document.activeElement === noteTitleInput;
-
-      if (inTitleInput) return;
-      if (!inEditor && isFormatKey && e.key.toLowerCase() !== 's') return;
-
-      if (e.ctrlKey && e.key.toLowerCase() === 'b') {
-        e.preventDefault();
-        formatDoc('bold');
-      } else if (e.ctrlKey && e.key.toLowerCase() === 'i') {
-        e.preventDefault();
-        formatDoc('italic');
-      } else if (e.ctrlKey && e.key.toLowerCase() === 'u') {
-        e.preventDefault();
-        formatDoc('underline');
-      } else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === 'X') {
-        e.preventDefault();
-        formatDoc('strikeThrough');
-      } else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === 'L') {
-        e.preventDefault();
-        formatDoc('insertUnorderedList');
-      } else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === 'O') {
-        e.preventDefault();
-        formatDoc('insertOrderedList');
-      } else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === 'C') {
-        e.preventDefault();
-        formatDoc('insertChecklist');
-      } else if (e.ctrlKey && e.key.toLowerCase() === 's') {
+      if (isReadOnly()) return;
+      if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 's') {
         e.preventDefault();
         saveNoteManual();
       }
