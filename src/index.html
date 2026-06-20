@@ -38,6 +38,11 @@
       --motion-duration-slow: 0.3s;
       --motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
       --motion-ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+      --window-shadow: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.08))
+                       drop-shadow(0 1px 4px rgba(0, 0, 0, 0.04));
+      --window-shadow-dark: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.22))
+                            drop-shadow(0 1px 4px rgba(0, 0, 0, 0.12));
     }
 
     html {
@@ -94,6 +99,19 @@
       user-select: text !important;
     }
 
+    /* Soft shadow on a wrapper — drop-shadow blurs correctly on transparent XWayland windows */
+    .window-frame {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      filter: var(--window-shadow);
+    }
+
+    body.dark-mode .window-frame {
+      filter: var(--window-shadow-dark);
+    }
+
     /* Opaque container to prevent compositor transparency font outline bug */
     #app-container {
       flex: 1;
@@ -104,7 +122,6 @@
       border: 1px solid var(--border-light);
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
       transition: background var(--motion-duration-slow) var(--motion-ease), border var(--motion-duration-slow) var(--motion-ease);
       position: relative;
     }
@@ -113,7 +130,6 @@
       background: var(--bg-main-dark);
       border: 1px solid var(--border-dark);
       color: var(--text-dark);
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
     }
 
     /* Programmatic Drag Header */
@@ -1456,6 +1472,7 @@
     <div class="window-resize-handle resize-se" data-direction="SouthEast"></div>
   </div>
 
+  <div class="window-frame">
   <div id="app-container">
 
     
@@ -2009,6 +2026,7 @@
       </div>
     </div>
 
+  </div>
   </div>
 
   <script src="vendor/marked.bundle.js"></script>
