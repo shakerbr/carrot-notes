@@ -62,11 +62,10 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      padding: var(--resize-gutter);
       box-sizing: border-box;
     }
 
-    /* External resize handles — outside the visible card, in the transparent gutter */
+    /* Invisible resize hit targets along window edges */
     .window-resize-layer {
       position: fixed;
       inset: 0;
@@ -104,7 +103,7 @@
       border: 1px solid var(--border-light);
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
       transition: background var(--motion-duration-slow) var(--motion-ease), border var(--motion-duration-slow) var(--motion-ease);
       position: relative;
     }
@@ -113,7 +112,7 @@
       background: var(--bg-main-dark);
       border: 1px solid var(--border-dark);
       color: var(--text-dark);
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
     }
 
     /* Programmatic Drag Header */

@@ -8,7 +8,7 @@ use tauri::{
 };
 
 #[cfg(target_os = "linux")]
-use gtk::prelude::*;
+pub mod linux_windowing;
 
 // Helper to get the notes path in the user's config folder
 fn get_notes_path(app_handle: &tauri::AppHandle) -> Result<PathBuf, String> {
@@ -801,27 +801,63 @@ async fn remove_all_cloud_sync(endpoint: String, token: String) -> Result<String
     Ok("All notes removed from cloud sync".to_string())
 }
 
-// Cross-platform Always on Top setter, with Linux Wayland GTK WindowTypeHint utility fix
-#[tauri::command]
-fn set_always_on_top(window: tauri::Window, always_on_top: bool) -> Result<(), String> {
-    #[cfg(target_os = "linux")]
-    {
-        if let Ok(gtk_window) = window.gtk_window() {
-            if always_on_top {
-                // Set window hint to Utility so composite managers keep it floating above IDEs/browsers on Wayland
-                gtk_window.set_type_hint(gtk::gdk::WindowTypeHint::Utility);
-                gtk_window.set_keep_above(true);
-            } else {
-                gtk_window.set_type_hint(gtk::gdk::WindowTypeHint::Normal);
-                gtk_window.set_keep_above(false);
-            }
-            gtk_window.present();
-        }
+// Cross-platform Always on Top setter
+#[cfg(target_os = "linux")]
+fn apply_linux_window_style(window: &tauri::WebviewWindow) {
+    if let Ok(gtk_window) = window.gtk_window() {
+        linux_windowing::apply_linux_transparent_window_style(&gtk_window);
+    }
+    linux_windowing::schedule_linux_window_style_refresh(window.clone());
+}
+
+#[cfg(target_os = "linux")]
+fn apply_always_on_top(
+    window: &tauri::WebviewWindow,
+    always_on_top: bool,
+    note_id: Option<&str>,
+) -> Result<(), String> {
+    window
+        .set_always_on_top(always_on_top)
+        .map_err(|e| e.to_string())?;
+
+    let gtk_window = window.gtk_window().ok();
+    let title = window.title().unwrap_or_default();
+    linux_windowing::apply_linux_always_on_top(
+        gtk_window,
+        always_on_top,
+        note_id,
+        &title,
+    );
+
+    if always_on_top {
+        linux_windowing::schedule_always_on_top_refresh(
+            window.clone(),
+            true,
+            note_id.map(String::from),
+        );
     }
 
-    // Call standard Tauri set_always_on_top as a fallback/cross-platform handler
-    window.set_always_on_top(always_on_top).map_err(|e| e.to_string())?;
     Ok(())
+}
+
+#[cfg(not(target_os = "linux"))]
+fn apply_always_on_top(
+    window: &tauri::WebviewWindow,
+    always_on_top: bool,
+    _note_id: Option<&str>,
+) -> Result<(), String> {
+    window
+        .set_always_on_top(always_on_top)
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn set_always_on_top(
+    window: tauri::WebviewWindow,
+    always_on_top: bool,
+    note_id: Option<String>,
+) -> Result<(), String> {
+    apply_always_on_top(&window, always_on_top, note_id.as_deref())
 }
 
 const NOTE_MIN_WIDTH: f64 = 240.0;
@@ -844,27 +880,32 @@ fn open_note_window(
 ) -> Result<(), String> {
     let label = format!("note_{}", id);
 
-    // If the window already exists, focus it and ensure min size is enforced
+    // If the window already exists, focus it and re-apply always-on-top if needed
     if let Some(win) = app_handle.get_webview_window(&label) {
         win.set_min_size(Some(note_min_size())).map_err(|e| e.to_string())?;
-        win.show().unwrap();
-        win.set_focus().unwrap();
+        if let Some(aot) = always_on_top {
+            apply_always_on_top(&win, aot, Some(&id))?;
+        }
+        win.show().map_err(|e| e.to_string())?;
+        win.set_focus().map_err(|e| e.to_string())?;
         return Ok(());
     }
 
     let w = width.unwrap_or(280.0).max(NOTE_MIN_WIDTH);
     let h = height.unwrap_or(300.0).max(NOTE_MIN_HEIGHT);
+    let window_title = format!("CarrotNote|{}", id);
 
     let mut win_builder = tauri::WebviewWindowBuilder::new(
         &app_handle,
         &label,
         tauri::WebviewUrl::App(format!("note.html?id={}", id).into()),
     )
-    .title("CarrotNote")
+    .title(&window_title)
     .inner_size(w, h)
     .min_inner_size(NOTE_MIN_WIDTH, NOTE_MIN_HEIGHT)
     .decorations(false)
     .transparent(true)
+    .shadow(false)
     .resizable(true)
     .skip_taskbar(true);
     if let (Some(px), Some(py)) = (x, y) {
@@ -877,6 +918,8 @@ fn open_note_window(
 
     let win = win_builder.build().map_err(|e| e.to_string())?;
 
+    apply_linux_window_style(&win);
+
     // Hook window destruction to update status in notes.json and notify dashboard
     let app_handle_clone = app_handle.clone();
     let id_clone = id.clone();
@@ -886,16 +929,10 @@ fn open_note_window(
         }
     });
 
-    // Apply GTK settings on Linux to handle Wayland always-on-top and utility layout
-    #[cfg(target_os = "linux")]
-    {
-        use gtk::prelude::*;
-        if let Ok(gtk_window) = win.gtk_window() {
-            gtk_window.set_type_hint(gtk::gdk::WindowTypeHint::Utility);
-            if let Some(aot) = always_on_top {
-                gtk_window.set_keep_above(aot);
-            }
-        }
+    win.show().map_err(|e| e.to_string())?;
+
+    if always_on_top.unwrap_or(false) {
+        apply_always_on_top(&win, true, Some(&id))?;
     }
 
     Ok(())
@@ -1022,6 +1059,7 @@ pub fn run() {
 
             // Prevent dashboard "main" window from destroying on close; hide instead
             if let Some(window) = app.get_webview_window("main") {
+                apply_linux_window_style(&window);
                 let window_clone = window.clone();
                 window.on_window_event(move |event| {
                     if let tauri::WindowEvent::CloseRequested { api, .. } = event {

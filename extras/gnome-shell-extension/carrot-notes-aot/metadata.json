@@ -1,0 +1,8 @@
+{
+  "uuid": "carrot-notes-aot@shakerbr.com",
+  "name": "CarrotNotes Always On Top",
+  "description": "Allows CarrotNotes sticky note windows to stay above other windows on GNOME Wayland.",
+  "shell-version": ["46", "47", "48", "49", "50"],
+  "version": 1,
+  "url": "https://github.com/shakerbr/carrot-notes"
+}

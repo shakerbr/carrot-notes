@@ -2,5 +2,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-  app_lib::run();
+    #[cfg(target_os = "linux")]
+    app_lib::linux_windowing::configure_linux_windowing_backend();
+
+    app_lib::run();
 }

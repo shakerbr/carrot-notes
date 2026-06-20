@@ -5,8 +5,8 @@
   "scripts": {
     "tauri": "tauri",
     "build:vendor": "node scripts/build-vendor.mjs",
-    "dev": "npm run build:vendor && tauri dev",
-    "build": "npm run build:vendor && tauri build",
+    "dev": "npm run build:vendor && env -u WAYLAND_DISPLAY GDK_BACKEND=x11 tauri dev",
+    "build": "npm run build:vendor && env -u WAYLAND_DISPLAY GDK_BACKEND=x11 tauri build",
     "postinstall": "npm run build:vendor"
   },
   "dependencies": {

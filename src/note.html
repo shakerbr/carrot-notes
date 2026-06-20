@@ -64,11 +64,10 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      padding: var(--resize-gutter);
       box-sizing: border-box;
     }
 
-    /* External resize handles — outside the visible card, in the transparent gutter */
+    /* Invisible resize hit targets along window edges */
     .window-resize-layer {
       position: fixed;
       inset: 0;
@@ -95,8 +94,8 @@
       display: flex;
       flex-direction: column;
       border-radius: 8px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 6px rgba(0, 0, 0, 0.05);
-      border: 1px solid rgba(0, 0, 0, 0.05);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(0, 0, 0, 0.06);
       overflow: hidden;
       transition: background var(--motion-duration) var(--motion-ease), color var(--motion-duration) var(--motion-ease);
       position: relative;
@@ -1622,7 +1621,7 @@
       isAlwaysOnTop = noteData.alwaysOnTop || false;
       updateAlwaysOnTopUI();
       if (appWindow && invoke && isAlwaysOnTop) {
-        invoke('set_always_on_top', { alwaysOnTop: true }).catch(console.error);
+        invoke('set_always_on_top', { alwaysOnTop: true, noteId }).catch(console.error);
       }
 
       // Populate custom color list in dropdown
@@ -1652,7 +1651,7 @@
               isAlwaysOnTop = updatedNote.alwaysOnTop || false;
               updateAlwaysOnTopUI();
               if (appWindow && invoke) {
-                invoke('set_always_on_top', { alwaysOnTop: isAlwaysOnTop }).catch(console.error);
+                invoke('set_always_on_top', { alwaysOnTop: isAlwaysOnTop, noteId }).catch(console.error);
               }
             }
             // Update readOnly if changed
@@ -2060,7 +2059,7 @@
       noteData.alwaysOnTop = isAlwaysOnTop;
       updateAlwaysOnTopUI();
       if (appWindow && invoke) {
-        invoke('set_always_on_top', { alwaysOnTop: isAlwaysOnTop }).catch(console.error);
+        invoke('set_always_on_top', { alwaysOnTop: isAlwaysOnTop, noteId }).catch(console.error);
       }
       persistNotes();
     });
