@@ -573,7 +573,11 @@
     }
     input[type="checkbox"]:not(.switch input):checked {
       background-color: var(--primary-color);
-      border-color: var(--primary-color);
+      border-color: transparent;
+    }
+    body.dark-mode input[type="checkbox"]:not(.switch input):checked {
+      background-color: var(--primary-color);
+      border-color: transparent;
     }
     input[type="checkbox"]:not(.switch input):checked::after {
       content: "";
@@ -632,6 +636,83 @@
     }
     input:checked + .slider { background-color: var(--primary-color); }
     input:checked + .slider:before { transform: translateX(18px); }
+
+    /* 3-way appearance segmented control */
+    .theme-mode-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 0;
+    }
+    .theme-segmented {
+      --theme-index: 0;
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      padding: 3px;
+      background: rgba(0, 0, 0, 0.06);
+      border: 1px solid rgba(0, 0, 0, 0.04);
+      border-radius: 11px;
+      min-width: 210px;
+    }
+    body.dark-mode .theme-segmented {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.06);
+    }
+    .theme-segmented[data-theme="light"] { --theme-index: 1; }
+    .theme-segmented[data-theme="dark"] { --theme-index: 2; }
+    .theme-segment-indicator {
+      position: absolute;
+      top: 3px;
+      bottom: 3px;
+      left: 3px;
+      width: calc((100% - 6px) / 3);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.04);
+      transition: transform var(--motion-duration-slow) var(--motion-ease);
+      transform: translateX(calc(var(--theme-index) * 100%));
+      pointer-events: none;
+    }
+    body.dark-mode .theme-segment-indicator {
+      background: rgba(255, 255, 255, 0.14);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.06);
+    }
+    .theme-segment {
+      position: relative;
+      z-index: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      border: none;
+      background: transparent;
+      padding: 7px 10px;
+      font-family: var(--font-ui);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      color: inherit;
+      opacity: 0.55;
+      transition: opacity var(--motion-duration) var(--motion-ease), color var(--motion-duration) var(--motion-ease);
+      white-space: nowrap;
+    }
+    .theme-segment svg {
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+      opacity: 0.85;
+    }
+    .theme-segment:hover { opacity: 0.85; }
+    .theme-segment.active {
+      opacity: 1;
+      color: var(--primary-color);
+    }
+    body.dark-mode .theme-segment.active {
+      color: #ffb366;
+    }
 
     /* Button and Status Sync */
     .btn-action-primary {
@@ -1055,6 +1136,9 @@
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+    body.dark-mode .btn-arrow, body.dark-mode .btn-color-delete {
+      color: rgba(255, 255, 255, 0.4);
     }
     .btn-arrow:hover, .btn-color-delete:hover {
       background: rgba(0, 0, 0, 0.05);
@@ -1781,12 +1865,35 @@
           <span>Dashboard Settings</span>
         </div>
         
-        <div class="toggle-container" style="margin-bottom: 0;">
-          <span class="toggle-label">Enable Dark Mode Dashboard</span>
-          <label class="switch">
-            <input type="checkbox" id="darkmode-toggle" onchange="saveSettings()">
-            <span class="slider"></span>
-          </label>
+        <div class="theme-mode-row">
+          <span class="toggle-label">Appearance</span>
+          <div id="theme-mode-segmented" class="theme-segmented" role="radiogroup" aria-label="Appearance mode" data-theme="system">
+            <span class="theme-segment-indicator" aria-hidden="true"></span>
+            <button type="button" class="theme-segment active" data-theme="system" role="radio" aria-checked="true" onclick="setThemeMode('system')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="2" y="3" width="20" height="14" rx="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+              System
+            </button>
+            <button type="button" class="theme-segment" data-theme="light" role="radio" aria-checked="false" onclick="setThemeMode('light')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="4"></circle>
+                <path d="M12 2v2"></path><path d="M12 20v2"></path>
+                <path d="M4.93 4.93l1.41 1.41"></path><path d="M17.66 17.66l1.41 1.41"></path>
+                <path d="M2 12h2"></path><path d="M20 12h2"></path>
+                <path d="M4.93 19.07l1.41-1.41"></path><path d="M17.66 6.34l1.41-1.41"></path>
+              </svg>
+              Light
+            </button>
+            <button type="button" class="theme-segment" data-theme="dark" role="radio" aria-checked="false" onclick="setThemeMode('dark')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+              Dark
+            </button>
+          </div>
         </div>
       </div>
 
@@ -2042,7 +2149,7 @@
     let cloudSyncTimer = null;
 
     let settings = {
-      theme: "light",
+      theme: "system",
       defaultSize: { width: 280, height: 300 },
       defaultFont: { family: "Caveat", size: "20px" },
       defaultColor: "theme-orange",
@@ -2075,6 +2182,57 @@
       }
     };
 
+    const themeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    function normalizeThemeSetting(theme) {
+      if (theme === 'dark' || theme === 'light' || theme === 'system') return theme;
+      return 'system';
+    }
+
+    function resolveEffectiveTheme(theme) {
+      const mode = normalizeThemeSetting(theme ?? settings.theme);
+      if (mode === 'system') {
+        return themeMediaQuery.matches ? 'dark' : 'light';
+      }
+      return mode;
+    }
+
+    function applyDashboardTheme(themeSetting) {
+      document.body.classList.toggle('dark-mode', resolveEffectiveTheme(themeSetting) === 'dark');
+    }
+
+    function updateThemeSegmentedUI() {
+      const mode = normalizeThemeSetting(settings.theme);
+      const container = document.getElementById('theme-mode-segmented');
+      if (!container) return;
+      container.dataset.theme = mode;
+      container.querySelectorAll('.theme-segment').forEach(btn => {
+        const active = btn.dataset.theme === mode;
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-checked', active ? 'true' : 'false');
+      });
+    }
+
+    window.setThemeMode = function(mode) {
+      settings.theme = normalizeThemeSetting(mode);
+      updateThemeSegmentedUI();
+      applyDashboardTheme(settings.theme);
+      saveSettings();
+    };
+
+    function setupThemeSystemListener() {
+      const onSystemThemeChange = () => {
+        if (normalizeThemeSetting(settings.theme) === 'system') {
+          applyDashboardTheme('system');
+        }
+      };
+      if (themeMediaQuery.addEventListener) {
+        themeMediaQuery.addEventListener('change', onSystemThemeChange);
+      } else {
+        themeMediaQuery.addListener(onSystemThemeChange);
+      }
+    }
+
     if (getCurrentWindow) {
       appWindow = getCurrentWindow();
     }
@@ -2094,6 +2252,8 @@
 
     // Initialize Dashboard UI
     document.addEventListener('DOMContentLoaded', () => {
+      setupThemeSystemListener();
+
       // 1. Setup programmatic dragging listener to fix Wayland borderless dragging
       if (appWindow) {
         document.getElementById('drag-header').addEventListener('mousedown', (e) => {
@@ -2167,13 +2327,9 @@
           try { settings = JSON.parse(sJson); } catch(e){}
         }
       }
-      
-      // Apply theme
-      if (settings.theme === 'dark') {
-        document.body.classList.add('dark-mode');
-      } else {
-        document.body.classList.remove('dark-mode');
-      }
+
+      settings.theme = normalizeThemeSetting(settings.theme);
+      applyDashboardTheme(settings.theme);
       
       populateSettingsUI();
       startSyncSchedulers();
@@ -2181,7 +2337,7 @@
 
     function populateSettingsUI() {
       // Appearance
-      document.getElementById('darkmode-toggle').checked = settings.theme === 'dark';
+      updateThemeSegmentedUI();
       
       // Default note formatting
       document.getElementById('strict-readonly-toggle').checked = settings.readOnlyMode;
@@ -2251,7 +2407,10 @@
     }
 
     function readSettingsFromUI() {
-      settings.theme = document.getElementById('darkmode-toggle').checked ? 'dark' : 'light';
+      const activeThemeBtn = document.querySelector('#theme-mode-segmented .theme-segment.active');
+      if (activeThemeBtn) {
+        settings.theme = normalizeThemeSetting(activeThemeBtn.dataset.theme);
+      }
       settings.readOnlyMode = document.getElementById('strict-readonly-toggle').checked;
       settings.defaultReadOnly = document.getElementById('default-readonly-toggle').checked;
       settings.autosave = document.getElementById('autosave-toggle').checked;
@@ -2295,11 +2454,7 @@
           .catch(console.error);
       }
       
-      if (settings.theme === 'dark') {
-        document.body.classList.add('dark-mode');
-      } else {
-        document.body.classList.remove('dark-mode');
-      }
+      applyDashboardTheme(settings.theme);
       
       startSyncSchedulers();
     };
