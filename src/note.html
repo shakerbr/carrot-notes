@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CarrotNote</title>
+  <!-- Paint the card immediately (before web fonts / JS) to avoid XWayland black flash -->
+  <style>
+    html, body { background: transparent !important; margin: 0; }
+    #note-card { background: #FFF2E6; color: #5C2D00; }
+  </style>
   <!-- Google Fonts for modern UI and handwriting look -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1280,8 +1285,16 @@
     const { getCurrentWindow } = window.__TAURI__ ? window.__TAURI__.window : { getCurrentWindow: null };
     const listen = window.__TAURI__ ? window.__TAURI__.event.listen : null;
 
+    let appWindow = null;
+    if (getCurrentWindow) {
+      appWindow = getCurrentWindow();
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
-    const noteId = urlParams.get('id');
+    let noteId = urlParams.get('id');
+    if (!noteId && appWindow?.label?.startsWith('note_')) {
+      noteId = appWindow.label.slice('note_'.length);
+    }
 
     let noteCardEl = document.getElementById('note-card');
     let editorHostEl = document.getElementById('editor-host');
@@ -1299,7 +1312,6 @@
     let noteData = null;
     let isAlwaysOnTop = false;
     let isLocked = false;
-    let appWindow = null;
 
     // Global settings loaded from Rust
     let settings = {
@@ -1321,10 +1333,6 @@
         { id: "theme-dark", name: "Clean Dark Gray", bg: "#2D2D35", text: "#E2E2EA", dot: "#5C5C6B", isBuiltIn: true, enabled: true }
       ]
     };
-
-    if (getCurrentWindow) {
-      appWindow = getCurrentWindow();
-    }
 
     function getEditorContent() {
       if (noteEditor) {
@@ -1640,9 +1648,6 @@
 
       isAlwaysOnTop = noteData.alwaysOnTop || false;
       updateAlwaysOnTopUI();
-      if (appWindow && invoke && isAlwaysOnTop) {
-        invoke('set_always_on_top', { alwaysOnTop: true, noteId }).catch(console.error);
-      }
 
       // Populate custom color list in dropdown
       buildColorDropdownMenu();

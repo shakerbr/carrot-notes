@@ -13,6 +13,12 @@ const GNOME_WINDOWS_BUS: &str = "org.gnome.Shell";
 const GNOME_WINDOWS_PATH: &str = "/org/gnome/Shell/Extensions/Windows";
 const GNOME_WINDOWS_IFACE: &str = "org.gnome.Shell.Extensions.Windows";
 
+pub fn configure_transparent_window(window: &tauri::WebviewWindow) {
+    if let Ok(gtk_window) = window.gtk_window() {
+        gtk_window.set_app_paintable(true);
+    }
+}
+
 /// Run the app through XWayland on Wayland sessions so always-on-top works without
 /// a GNOME Shell extension. Must run before GTK/WebKit initializes (see main.rs).
 pub fn configure_linux_windowing_backend() {
@@ -197,15 +203,13 @@ pub fn apply_linux_always_on_top(
     always_on_top: bool,
     note_id: Option<&str>,
     fallback_title: &str,
+    raise: bool,
 ) {
     if let Some(gtk_window) = gtk_window {
-        if always_on_top {
-            gtk_window.set_type_hint(gtk::gdk::WindowTypeHint::Utility);
-        } else {
-            gtk_window.set_type_hint(gtk::gdk::WindowTypeHint::Normal);
-        }
         gtk_window.set_keep_above(always_on_top);
-        gtk_window.present();
+        if raise {
+            gtk_window.present();
+        }
     }
 
     try_native_wayland_always_on_top(note_id, fallback_title, always_on_top);
@@ -225,7 +229,9 @@ pub fn schedule_always_on_top_refresh(
         let _ = window.set_always_on_top(true);
         if let Ok(gtk_window) = window.gtk_window() {
             gtk_window.set_keep_above(true);
-            gtk_window.present();
+            if window.is_visible().unwrap_or(false) {
+                gtk_window.present();
+            }
         }
         if using_native_wayland() {
             let title = window.title().unwrap_or_default();

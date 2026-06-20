@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder},
     tray::{TrayIconBuilder, TrayIconEvent},
+    webview::{Color, PageLoadEvent},
     Emitter, Manager,
 };
 
@@ -814,11 +815,13 @@ fn apply_always_on_top(
 
     let gtk_window = window.gtk_window().ok();
     let title = window.title().unwrap_or_default();
+    let raise = window.is_visible().unwrap_or(false);
     linux_windowing::apply_linux_always_on_top(
         gtk_window,
         always_on_top,
         note_id,
         &title,
+        raise,
     );
 
     if always_on_top {
@@ -859,6 +862,27 @@ fn note_min_size() -> tauri::Size {
     tauri::Size::Logical(tauri::LogicalSize::new(NOTE_MIN_WIDTH, NOTE_MIN_HEIGHT))
 }
 
+fn reveal_note_window_now(
+    window: tauri::WebviewWindow,
+    note_id: String,
+    always_on_top: Option<bool>,
+) {
+    let win = window.clone();
+    let _ = window.run_on_main_thread(move || {
+        if win.is_visible().unwrap_or(false) {
+            return;
+        }
+        if win.show().is_err() {
+            log::error!("Failed to show note window {}", note_id);
+            return;
+        }
+        let _ = win.set_focus();
+        if let Some(aot) = always_on_top {
+            let _ = apply_always_on_top(&win, aot, Some(&note_id));
+        }
+    });
+}
+
 // Spawns a new independent note window with specific position, size, and always-on-top state
 #[tauri::command]
 fn open_note_window(
@@ -887,6 +911,9 @@ fn open_note_window(
     let h = height.unwrap_or(300.0).max(NOTE_MIN_HEIGHT);
     let window_title = format!("CarrotNote|{}", id);
 
+    let reveal_id = id.clone();
+    let reveal_aot = always_on_top;
+
     let mut win_builder = tauri::WebviewWindowBuilder::new(
         &app_handle,
         &label,
@@ -897,8 +924,15 @@ fn open_note_window(
     .min_inner_size(NOTE_MIN_WIDTH, NOTE_MIN_HEIGHT)
     .decorations(false)
     .transparent(true)
+    .background_color(Color(0, 0, 0, 0))
     .resizable(true)
-    .skip_taskbar(true);
+    .visible(false)
+    .on_page_load(move |window, payload| {
+        if payload.event() != PageLoadEvent::Finished {
+            return;
+        }
+        reveal_note_window_now(window, reveal_id.clone(), reveal_aot);
+    });
     if let (Some(px), Some(py)) = (x, y) {
         win_builder = win_builder.position(px, py);
     }
@@ -909,6 +943,9 @@ fn open_note_window(
 
     let win = win_builder.build().map_err(|e| e.to_string())?;
 
+    #[cfg(target_os = "linux")]
+    linux_windowing::configure_transparent_window(&win);
+
     // Hook window destruction to update status in notes.json and notify dashboard
     let app_handle_clone = app_handle.clone();
     let id_clone = id.clone();
@@ -918,12 +955,29 @@ fn open_note_window(
         }
     });
 
-    win.show().map_err(|e| e.to_string())?;
+    Ok(())
+}
 
-    if always_on_top.unwrap_or(false) {
-        apply_always_on_top(&win, true, Some(&id))?;
+#[tauri::command]
+fn reveal_note_window(
+    app_handle: tauri::AppHandle,
+    id: String,
+    always_on_top: Option<bool>,
+) -> Result<(), String> {
+    let label = format!("note_{}", id);
+    let win = app_handle
+        .get_webview_window(&label)
+        .ok_or_else(|| format!("Note window '{}' not found", label))?;
+
+    if win.is_visible().unwrap_or(false) {
+        if let Some(aot) = always_on_top {
+            apply_always_on_top(&win, aot, Some(&id))?;
+        }
+        win.set_focus().map_err(|e| e.to_string())?;
+        return Ok(());
     }
 
+    reveal_note_window_now(win, id, always_on_top);
     Ok(())
 }
 
@@ -1066,6 +1120,7 @@ pub fn run() {
             save_settings,
             set_always_on_top,
             open_note_window,
+            reveal_note_window,
             close_note_window,
             sync_notes_to_cloud,
             sync_to_local_directory,
