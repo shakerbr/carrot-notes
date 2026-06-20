@@ -176,7 +176,7 @@
       color: white !important;
     }
 
-    /* Markdown editor (CodeMirror) */
+    /* WYSIWYG editor (Tiptap / ProseMirror) */
     .note-editor-host {
       flex: 1;
       min-height: 0;
@@ -185,72 +185,158 @@
       overflow: hidden;
     }
 
-    .note-editor-host .cm-editor {
+    .note-editor-host .tiptap,
+    .note-editor-host .ProseMirror {
       flex: 1;
+      min-height: 100%;
       height: 100%;
-      background: transparent !important;
-      color: var(--note-text);
-    }
-
-    .note-editor-host .cm-scroller {
-      overflow: auto;
+      padding: 12px;
+      outline: none;
+      overflow-y: auto;
+      overflow-wrap: break-word;
       font-family: inherit;
       font-size: inherit;
       line-height: 1.4;
-    }
-
-    .note-editor-host .cm-content {
-      padding: 12px;
+      color: var(--note-text);
       caret-color: var(--note-text);
-    }
-
-    .note-editor-host .cm-gutters {
-      display: none !important;
-    }
-
-    .note-editor-host .cm-activeLine {
-      background: transparent !important;
-    }
-
-    .note-editor-host.cm-focused .cm-cursor {
-      border-left-color: var(--note-accent) !important;
-    }
-
-    .note-editor-host .cm-selectionBackground,
-    .note-editor-host.cm-focused .cm-selectionBackground {
-      background: var(--note-accent-light) !important;
-    }
-
-    .note-editor-host .cm-line {
-      padding: 0 2px;
-    }
-
-    /* Markdown syntax accents */
-    .note-editor-host .tok-heading { color: var(--note-accent); font-weight: 600; }
-    .note-editor-host .tok-strong { font-weight: 700; }
-    .note-editor-host .tok-emphasis { font-style: italic; }
-    .note-editor-host .tok-strikethrough { text-decoration: line-through; opacity: 0.75; }
-    .note-editor-host .tok-list { color: var(--note-accent); }
-    .note-editor-host .tok-link { color: var(--note-accent); text-decoration: underline; }
-
-    /* Custom thin scrollbar for note editor */
-    .note-editor-host .cm-scroller::-webkit-scrollbar {
-      width: 12px;
-    }
-    .note-editor-host .cm-scroller::-webkit-scrollbar-track {
       background: transparent;
     }
-    .note-editor-host .cm-scroller::-webkit-scrollbar-thumb {
+
+    .note-editor-host .ProseMirror:focus {
+      outline: none;
+    }
+
+    .note-editor-host .ProseMirror p {
+      margin: 0.25em 0;
+    }
+
+    .note-editor-host .ProseMirror p.is-editor-empty:first-child::before,
+    .note-editor-host .ProseMirror .is-empty::before {
+      content: attr(data-placeholder);
+      color: var(--note-text);
+      opacity: 0.35;
+      pointer-events: none;
+      float: left;
+      height: 0;
+    }
+
+    .note-editor-host .ProseMirror ul:not([data-type="taskList"]),
+    .note-editor-host .ProseMirror ol {
+      list-style-position: outside;
+      padding-left: 1.4em;
+      margin: 0.35em 0;
+    }
+
+    .note-editor-host .ProseMirror ul:not([data-type="taskList"]) {
+      list-style-type: disc;
+    }
+
+    .note-editor-host .ProseMirror ol {
+      list-style-type: decimal;
+    }
+
+    .note-editor-host .ProseMirror li {
+      margin: 0.2em 0;
+    }
+
+    .note-editor-host .ProseMirror li::marker {
+      color: var(--note-accent);
+    }
+
+    /* Task list / checklist */
+    .note-editor-host .ProseMirror ul[data-type="taskList"] {
+      list-style: none;
+      padding-left: 0;
+      margin: 0.35em 0;
+    }
+
+    .note-editor-host .ProseMirror li[data-type="taskItem"] {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.45em;
+      margin: 0.3em 0;
+    }
+
+    .note-editor-host .ProseMirror li[data-type="taskItem"] > label {
+      flex-shrink: 0;
+      line-height: inherit;
+      user-select: none;
+      margin-top: 0.12em;
+    }
+
+    .note-editor-host .ProseMirror li[data-type="taskItem"] > label input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: calc(1em - 0.2em);
+      height: calc(1em - 0.2em);
+      font-size: inherit;
+      border: 0.08em solid var(--note-text);
+      opacity: 0.7;
+      border-radius: 0.18em;
+      outline: none;
+      cursor: pointer;
+      background: transparent;
+      margin: 0;
+      vertical-align: middle;
+      position: relative;
+      box-sizing: border-box;
+    }
+
+    .note-editor-host .ProseMirror li[data-type="taskItem"] > label input[type="checkbox"]:checked {
+      background-color: var(--note-accent);
+      border-color: var(--note-accent);
+      opacity: 1;
+    }
+
+    .note-editor-host .ProseMirror li[data-type="taskItem"] > label input[type="checkbox"]:checked::after {
+      content: "";
+      width: 0.18em;
+      height: 0.34em;
+      border: solid white;
+      border-width: 0 0.08em 0.08em 0;
+      transform: rotate(45deg);
+      position: absolute;
+      top: 0.07em;
+      left: 0.24em;
+    }
+
+    .note-editor-host .ProseMirror li[data-type="taskItem"][data-checked="true"] > div {
+      text-decoration: line-through;
+      opacity: 0.6;
+    }
+
+    .note-editor-host .ProseMirror li[data-type="taskItem"] > div {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .note-editor-host .ProseMirror ::selection {
+      background: var(--note-accent-light);
+    }
+
+    .note-editor-host .ProseMirror strong { font-weight: 700; }
+    .note-editor-host .ProseMirror em { font-style: italic; }
+    .note-editor-host .ProseMirror u { text-decoration: underline; }
+    .note-editor-host .ProseMirror s { text-decoration: line-through; opacity: 0.75; }
+
+    /* Custom thin scrollbar for note editor */
+    .note-editor-host .ProseMirror::-webkit-scrollbar {
+      width: 12px;
+    }
+    .note-editor-host .ProseMirror::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .note-editor-host .ProseMirror::-webkit-scrollbar-thumb {
       background-color: rgba(0, 0, 0, 0.15);
       border-radius: 6px;
       border: 3px solid transparent;
       background-clip: padding-box;
       transition: background-color var(--motion-duration) var(--motion-ease);
     }
-    #note-card.theme-dark .note-editor-host .cm-scroller::-webkit-scrollbar-thumb {
+    #note-card.theme-dark .note-editor-host .ProseMirror::-webkit-scrollbar-thumb {
       background-color: rgba(255, 255, 255, 0.2);
     }
-    .note-editor-host .cm-scroller::-webkit-scrollbar-thumb:hover {
+    .note-editor-host .ProseMirror::-webkit-scrollbar-thumb:hover {
       background-color: var(--note-accent) !important;
     }
 
@@ -1228,7 +1314,7 @@
 
   </div>
 
-  <script src="vendor/codemirror.bundle.js"></script>
+  <script src="vendor/tiptap.bundle.js"></script>
   <script src="js/markdown-helpers.js"></script>
   <script>
     const invoke = window.__TAURI__ ? window.__TAURI__.core.invoke : null;
@@ -1240,8 +1326,7 @@
 
     let noteCardEl = document.getElementById('note-card');
     let editorHostEl = document.getElementById('editor-host');
-    let editorView = null;
-    let editableCompartment = null;
+    let noteEditor = null;
     let typingTimer = null;
     let alwaysTopBtn = document.getElementById('always-top-btn');
     let moreBtn = document.getElementById('more-btn');
@@ -1283,7 +1368,14 @@
     }
 
     function getEditorContent() {
-      return editorView ? editorView.state.doc.toString() : (noteData?.content || '');
+      if (noteEditor) {
+        try {
+          return noteEditor.getMarkdown() || '';
+        } catch (e) {
+          return noteData?.content || '';
+        }
+      }
+      return noteData?.content || '';
     }
 
     function fontFamilyCSSValue(font) {
@@ -1300,49 +1392,53 @@
       editorHostEl.style.fontSize = noteData.fontSize || settings.defaultFont.size;
     }
 
-    function initMarkdownEditor(initialContent) {
-      if (!window.CarrotCM || !editorHostEl) return;
+    function initWysiwygEditor(initialContent) {
+      if (!window.CarrotEditor || !editorHostEl) return;
 
-      editableCompartment = new CarrotCM.Compartment();
-      const state = CarrotCM.EditorState.create({
-        doc: initialContent || '',
+      const { Editor, StarterKit, Underline, TaskList, TaskItem, Placeholder, Markdown } = CarrotEditor;
+
+      noteEditor = new Editor({
+        element: editorHostEl,
+        content: initialContent || '',
+        contentType: 'markdown',
+        editable: true,
         extensions: [
-          CarrotCM.history(),
-          CarrotCM.markdown({ base: CarrotCM.markdownLanguage }),
-          CarrotCM.syntaxHighlighting(CarrotCM.defaultHighlightStyle),
-          CarrotCM.keymap.of([
-            ...CarrotCM.historyKeymap,
-            ...CarrotCM.defaultKeymap,
-          ]),
-          CarrotCM.EditorView.lineWrapping,
-          CarrotCM.drawSelection(),
-          CarrotCM.highlightActiveLine(),
-          editableCompartment.of(CarrotCM.EditorView.editable.of(true)),
-          CarrotCM.EditorView.updateListener.of((update) => {
-            if (update.docChanged) {
-              onEditorDocChanged();
-            }
-            if (update.selectionSet || update.focusChanged) {
-              updateFormatStates();
-            }
+          StarterKit.configure({
+            heading: { levels: [1, 2, 3] },
           }),
-          CarrotCM.EditorView.theme({
-            '&': { height: '100%' },
-            '.cm-scroller': { fontFamily: 'inherit', fontSize: 'inherit', lineHeight: '1.4' },
-            '.cm-content': { padding: '12px' },
+          Underline,
+          TaskList,
+          TaskItem.configure({ nested: true }),
+          Placeholder.configure({
+            placeholder: 'Type thoughts here...',
           }),
+          Markdown,
         ],
+        editorProps: {
+          attributes: {
+            class: 'tiptap',
+          },
+        },
+        onUpdate: () => {
+          onEditorDocChanged();
+        },
+        onSelectionUpdate: () => {
+          updateFormatStates();
+        },
+        onFocus: () => {
+          updateFormatStates();
+        },
+        onBlur: () => {
+          updateFormatStates();
+        },
       });
 
-      editorView = new CarrotCM.EditorView({ state, parent: editorHostEl });
       applyEditorTypography();
     }
 
     function setEditorEditable(editable) {
-      if (!editorView || !editableCompartment) return;
-      editorView.dispatch({
-        effects: editableCompartment.reconfigure(CarrotCM.EditorView.editable.of(editable)),
-      });
+      if (!noteEditor) return;
+      noteEditor.setEditable(editable);
     }
 
     function onEditorDocChanged() {
@@ -1529,8 +1625,8 @@
         }
       });
 
-      // Render markdown editor
-      initMarkdownEditor(noteData.content || '');
+      // Render WYSIWYG editor (markdown stored, not shown)
+      initWysiwygEditor(noteData.content || '');
       
       // Apply theme color
       applyColor(noteData.theme || 'theme-orange');
@@ -1658,9 +1754,9 @@
       // Auto-save handled by CodeMirror updateListener (onEditorDocChanged)
       
       // Hook active formatting state listeners
-      if (editorView) {
-        editorView.dom.addEventListener('focus', updateFormatStates);
-        editorView.dom.addEventListener('blur', updateFormatStates);
+      if (noteEditor) {
+        noteEditor.view.dom.addEventListener('focus', updateFormatStates);
+        noteEditor.view.dom.addEventListener('blur', updateFormatStates);
       }
       
       // Initialize format states
@@ -2124,11 +2220,38 @@
       if (appWindow) appWindow.close();
     });
 
-    // Markdown formatting operations
+    // WYSIWYG formatting (Notion-style — no visible markdown syntax)
     window.formatDoc = function(cmd) {
-      if (isReadOnly() || !editorView || !window.CarrotMarkdown) return;
-      editorView.focus();
-      CarrotMarkdown.applyFormat(editorView, cmd);
+      if (isReadOnly() || !noteEditor) return;
+      const chain = noteEditor.chain().focus();
+      switch (cmd) {
+        case 'bold':
+          chain.toggleBold().run();
+          break;
+        case 'italic':
+          chain.toggleItalic().run();
+          break;
+        case 'underline':
+          chain.toggleUnderline().run();
+          break;
+        case 'strikeThrough':
+          chain.toggleStrike().run();
+          break;
+        case 'insertUnorderedList':
+          chain.toggleBulletList().run();
+          break;
+        case 'insertOrderedList':
+          chain.toggleOrderedList().run();
+          break;
+        case 'insertChecklist':
+          chain.toggleTaskList().run();
+          break;
+        case 'removeFormat':
+          chain.unsetAllMarks().run();
+          break;
+        default:
+          return;
+      }
       syncEditorContent();
       updateFormatStates();
     };
@@ -2173,10 +2296,10 @@
     let isWindowDragging = false;
 
     function isEditorFocused() {
-      return !!(editorView && editorView.hasFocus);
+      return !!(noteEditor && noteEditor.isFocused);
     }
 
-    // Check keybindings (CodeMirror handles undo/redo/select-all internally)
+    // Keyboard shortcuts for formatting (Tiptap handles undo/redo/select-all)
     document.addEventListener('keydown', (e) => {
       const isFormatKey = e.ctrlKey && (
         e.key.toLowerCase() === 'b' || 
@@ -2291,8 +2414,13 @@
 
       container.innerHTML = '';
       
-      const active = window.CarrotMarkdown
-        ? CarrotMarkdown.getActiveFormats(editorView)
+      const active = noteEditor && noteEditor.isFocused && !isWindowDragging
+        ? {
+            bold: noteEditor.isActive('bold'),
+            italic: noteEditor.isActive('italic'),
+            underline: noteEditor.isActive('underline'),
+            strikeThrough: noteEditor.isActive('strike'),
+          }
         : { bold: false, italic: false, underline: false, strikeThrough: false };
       
       formats.forEach(f => {

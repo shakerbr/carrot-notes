@@ -4,11 +4,11 @@ import { mkdir } from 'node:fs/promises';
 await mkdir('src/vendor', { recursive: true });
 
 await esbuild.build({
-  entryPoints: ['scripts/codemirror-entry.js'],
-  outfile: 'src/vendor/codemirror.bundle.js',
+  entryPoints: ['scripts/tiptap-entry.js'],
+  outfile: 'src/vendor/tiptap.bundle.js',
   bundle: true,
   format: 'iife',
-  globalName: 'CarrotCM',
+  globalName: 'CarrotEditor',
   minify: true,
   target: ['es2020'],
 });
@@ -23,4 +23,4 @@ await esbuild.build({
   target: ['es2020'],
 });
 
-console.log('Built src/vendor/codemirror.bundle.js and marked.bundle.js');
+console.log('Built src/vendor/tiptap.bundle.js and marked.bundle.js');

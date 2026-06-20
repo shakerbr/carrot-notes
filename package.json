@@ -10,11 +10,14 @@
     "postinstall": "npm run build:vendor"
   },
   "dependencies": {
-    "@codemirror/commands": "^6.8.1",
-    "@codemirror/lang-markdown": "^6.3.3",
-    "@codemirror/language": "^6.11.1",
-    "@codemirror/state": "^6.5.2",
-    "@codemirror/view": "^6.37.2",
+    "@tiptap/core": "^3.27.1",
+    "@tiptap/extension-placeholder": "^3.27.1",
+    "@tiptap/extension-task-item": "^3.27.1",
+    "@tiptap/extension-task-list": "^3.27.1",
+    "@tiptap/extension-underline": "^3.27.1",
+    "@tiptap/markdown": "^3.27.1",
+    "@tiptap/pm": "^3.27.1",
+    "@tiptap/starter-kit": "^3.27.1",
     "marked": "^15.0.12"
   },
   "devDependencies": {
