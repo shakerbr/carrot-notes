@@ -1,81 +1,145 @@
-# Carrot Notes
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="svg/carrot-app-icon/carrot-app-icon-dark.svg">
+    <img src="svg/carrot-app-icon/carrot-app-icon-light.svg" width="128" height="128" alt="Carrot Notes">
+  </picture>
+</p>
 
-Lightweight desktop sticky notes with rich editing, floating windows, system tray access, and local or self-hosted sync. Built with [Tauri](https://tauri.app/) and Rust.
+<h1 align="center">Carrot Notes</h1>
 
-**Website:** [carrot-notes.spidrahub.com](https://carrot-notes.spidrahub.com) · **Repository:** [github.com/shakerbr/carrot-notes](https://github.com/shakerbr/carrot-notes)
+<p align="center">
+  <strong>Lightweight floating sticky notes for Linux.</strong><br>
+  Rich editing · Markdown on disk · Sync on your terms
+</p>
 
-![Carrot Notes icon](app-icon.png)
+<p align="center">
+  <a href="https://github.com/shakerbr/carrot-notes/releases"><img src="https://img.shields.io/github/v/release/shakerbr/carrot-notes?style=flat-square&color=F06E10" alt="Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-F06E10?style=flat-square" alt="License"></a>
+  <a href="#platform-support"><img src="https://img.shields.io/badge/Platform-Linux-2ea043?style=flat-square" alt="Platform"></a>
+  <a href="https://tauri.app/"><img src="https://img.shields.io/badge/Built%20with-Tauri%202-24C8DB?style=flat-square" alt="Tauri"></a>
+</p>
 
-## Why Carrot Notes?
+<p align="center">
+  <a href="https://carrot-notes.spidrahub.com"><strong>Website</strong></a>
+  ·
+  <a href="https://github.com/shakerbr/carrot-notes/releases"><strong>Download</strong></a>
+  ·
+  <a href="#install"><strong>Install</strong></a>
+  ·
+  <a href="CHANGELOG.md"><strong>Changelog</strong></a>
+  ·
+  <a href="CONTRIBUTING.md"><strong>Contributing</strong></a>
+</p>
 
-Most sticky-note apps are either too plain (plain text only) or too heavy (full note suites). Carrot Notes sits in the middle:
+---
 
-- **Floating windows** that stay on your desktop — resize, move, and pin them where you need them
-- **Notion-style editing** — you see formatted text, not markdown syntax
-- **Markdown on disk** — notes are stored as portable `.md` files when you sync
-- **Local-first** — your data lives on your machine; sync is optional
+## Overview
+
+Carrot Notes is a **local-first desktop sticky-notes app** built with [Tauri](https://tauri.app/) and Rust. Each note lives in its own floating window — resize it, pin it, keep it always on top — while you write in a clean, Notion-style editor. Under the hood, content is stored as **Markdown**, so your notes stay portable and under your control.
+
+No account required. No vendor lock-in. Optional sync to a folder or your own server.
+
+<p align="center">
+  <img src="svg/carrots/carrot-color.svg" width="48" height="48" alt="" aria-hidden="true">
+</p>
+
+---
 
 ## Features
 
+<table>
+<tr>
+<td width="50%" valign="top">
+
 ### Notes & editor
-- Multiple independent floating note windows
-- WYSIWYG editor (bold, italic, underline, strikethrough)
-- Bullet lists, numbered lists, and checklists (click to toggle)
+
+- Independent floating note windows
+- WYSIWYG editing — bold, italic, underline, strikethrough
+- Bullets, numbered lists, and interactive checklists
 - Keyboard shortcuts (`Ctrl+B/I/U`, `Ctrl+Shift+L/O/C`, `Ctrl+S`)
 - Per-note colors, fonts, and sizes
 - Temporary notes (excluded from sync until named)
 - Autosave or manual save with unsaved indicators
-- Read-only mode (global, default, or per-note)
+- Read-only mode — global, default, or per-note
 
-### Dashboard
+</td>
+<td width="50%" valign="top">
+
+### Dashboard & desktop
+
 - Grid preview of all notes
-- Float / archive notes from the dashboard
-- Pin, rename, duplicate, and delete
+- Float, archive, pin, rename, duplicate, delete
 - System / Light / Dark appearance
-
-### Sync & backup
-- **Local folder sync** — JSON backup + individual `.md` files
-- **Cloud sync** — POST to your own endpoint with Bearer token
-- Sync modes: manual, on save, or scheduled
-- Deleted notes archived to a `deleted/` folder on sync
-- **Restore from sync** — recover notes deleted or changed locally
-- Danger zone with typed confirmation for cleanup
-
-### Desktop integration
 - System tray with pinned and recent notes
 - Always-on-top per note
-- Note windows appear in the dock/taskbar (Linux)
+- Dock / taskbar entries (Linux)
 - Remembers window position and size
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### Sync & backup
+
+- **Local folder** — JSON backup + individual `.md` files
+- **Cloud** — POST to your own endpoint (Bearer token)
+- Manual, on-save, or scheduled sync
+- Deleted notes archived to `deleted/` on sync
+- Restore from sync — recover deleted or overwritten notes
+- Danger zone with typed confirmation
+
+</td>
+<td width="50%" valign="top">
+
+### Data & privacy
+
+- Notes stored locally on your machine
+- Markdown export via sync folder
+- No telemetry or bundled cloud service
+- Self-hosted sync when you want it
+- Temporary notes never leave your device until named
+
+</td>
+</tr>
+</table>
+
+---
 
 ## Platform support
 
-| Platform | Status |
-|----------|--------|
-| **Linux** | Primary — tested on Ubuntu / GNOME (Wayland) |
-| **Windows / macOS** | May build via Tauri; not officially tested yet |
+| Platform | Status | Packages |
+|----------|--------|----------|
+| **Linux** | Primary — tested on Ubuntu / GNOME (Wayland) | `.deb`, AppImage, `.rpm` |
+| **Windows** | May build via Tauri | Not officially tested |
+| **macOS** | May build via Tauri | Not officially tested |
 
-Linux packages are provided as `.deb` and AppImage. RPM is also produced by the build.
+> Carrot Notes is **Linux-first**. Windows and macOS builds may work but have not been validated in this release.
 
-## Install (Linux)
+---
 
-### .deb (Debian / Ubuntu)
+## Install
 
-Download `carrotnotes_0.1.0_amd64.deb` from [Releases](https://github.com/shakerbr/carrot-notes/releases), then:
+Download the latest release from [**GitHub Releases**](https://github.com/shakerbr/carrot-notes/releases).
+
+### Debian / Ubuntu (`.deb`)
 
 ```bash
 sudo apt install ./carrotnotes_0.1.0_amd64.deb
 ```
 
-### AppImage
+### AppImage (portable)
 
 ```bash
 chmod +x carrotnotes_0.1.0_amd64.AppImage
 ./carrotnotes_0.1.0_amd64.AppImage
 ```
 
+---
+
 ## Build from source
 
-**Requirements:** Node.js 18+, Rust 1.77+, Linux build dependencies for Tauri ([docs](https://tauri.app/start/prerequisites/)).
+**Requirements:** Node.js 18+, Rust 1.77+, and [Tauri prerequisites](https://tauri.app/start/prerequisites/) for Linux.
 
 ```bash
 git clone https://github.com/shakerbr/carrot-notes.git
@@ -84,7 +148,7 @@ npm install
 npm run build
 ```
 
-Installable packages are written to `src-tauri/target/release/bundle/`.
+Built packages are output to `src-tauri/target/release/bundle/`.
 
 ### Development
 
@@ -92,36 +156,72 @@ Installable packages are written to `src-tauri/target/release/bundle/`.
 npm run dev
 ```
 
-On GNOME + Wayland, the dev and build scripts use XWayland so always-on-top works without a shell extension.
+On GNOME + Wayland, dev and production builds use XWayland so **always-on-top works without a shell extension**.
+
+---
+
+## Configuration
+
+| Data | Default location |
+|------|------------------|
+| Notes | `~/.local/share/com.shakerbr.carrotnotes/notes.json` |
+| Settings | `~/.local/share/com.shakerbr.carrotnotes/settings.json` |
+| Sync folder | User-defined (contains `.md` files + `carrotnotes_backup.json`) |
+
+### Environment variables
+
+| Variable | Effect |
+|----------|--------|
+| `CARROTNOTES_NATIVE_WAYLAND=1` | Use native Wayland instead of XWayland. Always-on-top may require [optional GNOME extension](extras/gnome-shell-extension/README.md). |
+
+---
 
 ## Known limitations
 
-- **Linux-first** — best tested on GNOME; other desktops may behave differently
-- **Always-on-top on Wayland** — uses XWayland by default; set `CARROTNOTES_NATIVE_WAYLAND=1` to opt into native Wayland (always-on-top may not work without extra setup)
-- **Cloud sync** — bring your own server; there is no official Carrot cloud service
-- **No mobile or web client** — desktop only
-- **Early release (0.1.0)** — feedback and issue reports welcome
+- Best tested on **GNOME**; other Linux desktops may differ
+- **Cloud sync** requires your own server — no official Carrot cloud
+- **Desktop only** — no mobile or web client in v0.1.0
+- Early release — [issues and feedback](https://github.com/shakerbr/carrot-notes/issues) welcome
 
-## Data locations
-
-| Data | Location |
-|------|----------|
-| Notes | `~/.local/share/com.shakerbr.carrotnotes/notes.json` |
-| Settings | `~/.local/share/com.shakerbr.carrotnotes/settings.json` |
-| Sync folder | User-configured (contains `.md` files + `carrotnotes_backup.json`) |
+---
 
 ## Tech stack
 
-- **Frontend:** HTML, CSS, JavaScript, [Tiptap](https://tiptap.dev/) (WYSIWYG + Markdown)
-- **Backend:** Rust, [Tauri 2](https://tauri.app/)
-- **Fonts:** [Inter](https://fonts.google.com/specimen/Inter), [Caveat](https://fonts.google.com/specimen/Caveat)
+| Layer | Technology |
+|-------|------------|
+| UI | HTML, CSS, JavaScript |
+| Editor | [Tiptap](https://tiptap.dev/) (WYSIWYG + Markdown) |
+| Runtime | [Tauri 2](https://tauri.app/) |
+| Backend | Rust |
+| Fonts | [Inter](https://fonts.google.com/specimen/Inter), [Caveat](https://fonts.google.com/specimen/Caveat) |
 
-## License
+---
 
-[MIT](LICENSE) © Shaker Br
+## Brand assets
+
+Logos and icons live in [`svg/`](svg/):
+
+| Asset | Path |
+|-------|------|
+| App icon (light background) | `svg/carrot-app-icon/carrot-app-icon-light-bg-effect.svg` |
+| App icon (dark background) | `svg/carrot-app-icon/carrot-app-icon-dark-bg-effect.svg` |
+| Carrot mark (color) | `svg/carrots/carrot-color.svg` |
+| Carrot mark (mono) | `svg/carrots/carrot-white.svg`, `svg/carrots/carrot-black.svg` |
+
+---
 
 ## Contributing
 
-Issues and pull requests are welcome on [GitHub](https://github.com/shakerbr/carrot-notes/issues).
+Contributions are welcome — bug reports, feature ideas, and pull requests.
 
-See [CHANGELOG.md](CHANGELOG.md) for release history.
+See [**CONTRIBUTING.md**](CONTRIBUTING.md) for development setup and guidelines.
+
+---
+
+## License
+
+[MIT](LICENSE) © [Shaker Br](https://github.com/shakerbr)
+
+<p align="center">
+  <img src="svg/carrots/carrot-color.svg" width="32" height="32" alt="Carrot Notes" />
+</p>

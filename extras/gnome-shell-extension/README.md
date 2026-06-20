@@ -1,19 +1,31 @@
-# CarrotNotes GNOME Shell extension (optional)
+<p align="center">
+  <img src="../../svg/carrots/carrot-color.svg" width="48" height="48" alt="Carrot Notes">
+</p>
 
-**You do not need this extension.** CarrotNotes automatically uses XWayland on GNOME Wayland so always-on-top works out of the box.
+<h1 align="center">GNOME Shell Extension</h1>
 
-This extension is only for advanced users who explicitly run with native Wayland:
+<p align="center"><em>Optional · Advanced users only</em></p>
+
+---
+
+## You probably don't need this
+
+Carrot Notes automatically uses **XWayland** on GNOME Wayland, so **always-on-top works out of the box** — no extension required.
+
+This extension is only relevant if you explicitly run with native Wayland:
 
 ```bash
 CARROTNOTES_NATIVE_WAYLAND=1 npm run dev
 ```
 
-In that mode, GNOME blocks always-on-top from apps, so one of these extensions is required:
+In that mode, GNOME blocks always-on-top from applications. You then need one of:
 
-- This CarrotNotes extension, or
+- This Carrot Notes extension, or
 - [Window Calls](https://extensions.gnome.org/extension/4724/window-calls/)
 
-## Install (optional)
+---
+
+## Install
 
 ```bash
 mkdir -p ~/.local/share/gnome-shell/extensions/carrot-notes-aot@shakerbr.com
@@ -30,3 +42,11 @@ gdbus call --session \
   --object-path /com/shakerbr/CarrotNotes/Windows \
   --method com.shakerbr.CarrotNotes.Windows.Ping
 ```
+
+Expected output: `(true,)`
+
+---
+
+<p align="center">
+  <a href="../../README.md">← Back to Carrot Notes</a>
+</p>
