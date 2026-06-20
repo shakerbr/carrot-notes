@@ -3,7 +3,6 @@ use std::process::Command;
 use std::thread;
 use std::time::Duration;
 
-use gdkx11::X11Window;
 use gtk::prelude::*;
 
 const CARROT_BUS: &str = "com.shakerbr.CarrotNotes.Windows";
@@ -33,40 +32,6 @@ pub fn configure_linux_windowing_backend() {
 
 pub fn using_native_wayland() -> bool {
     std::env::var("CARROTNOTES_NATIVE_WAYLAND").is_ok()
-}
-
-/// Prevent GNOME/Mutter from drawing a rectangular compositor shadow around
-/// transparent undecorated windows (we draw our own CSS shadow on the card).
-pub fn apply_linux_transparent_window_style(gtk_window: &gtk::ApplicationWindow) {
-    if let Some(gdk_window) = gtk_window.window() {
-        gdk_window.set_shadow_width(0, 0, 0, 0);
-
-        if let Some(x11_window) = gdk_window.downcast_ref::<X11Window>() {
-            let xid = format!("0x{:x}", x11_window.xid());
-            // Tell Mutter not to reserve extra shadow margin around the window.
-            let _ = Command::new("xprop")
-                .args([
-                    "-id",
-                    &xid,
-                    "-f",
-                    "_GTK_FRAME_EXTENTS",
-                    "32c",
-                    "-set",
-                    "_GTK_FRAME_EXTENTS",
-                    "0, 0, 0, 0",
-                ])
-                .output();
-        }
-    }
-}
-
-pub fn schedule_linux_window_style_refresh(window: tauri::WebviewWindow) {
-    std::thread::spawn(move || {
-        thread::sleep(Duration::from_millis(200));
-        if let Ok(gtk_window) = window.gtk_window() {
-            apply_linux_transparent_window_style(&gtk_window);
-        }
-    });
 }
 
 #[derive(Debug, Deserialize)]
@@ -233,8 +198,7 @@ pub fn apply_linux_always_on_top(
     note_id: Option<&str>,
     fallback_title: &str,
 ) {
-    if let Some(gtk_window) = &gtk_window {
-        apply_linux_transparent_window_style(gtk_window);
+    if let Some(gtk_window) = gtk_window {
         if always_on_top {
             gtk_window.set_type_hint(gtk::gdk::WindowTypeHint::Utility);
         } else {
@@ -260,7 +224,6 @@ pub fn schedule_always_on_top_refresh(
         thread::sleep(Duration::from_millis(250));
         let _ = window.set_always_on_top(true);
         if let Ok(gtk_window) = window.gtk_window() {
-            apply_linux_transparent_window_style(&gtk_window);
             gtk_window.set_keep_above(true);
             gtk_window.present();
         }

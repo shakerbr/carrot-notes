@@ -803,14 +803,6 @@ async fn remove_all_cloud_sync(endpoint: String, token: String) -> Result<String
 
 // Cross-platform Always on Top setter
 #[cfg(target_os = "linux")]
-fn apply_linux_window_style(window: &tauri::WebviewWindow) {
-    if let Ok(gtk_window) = window.gtk_window() {
-        linux_windowing::apply_linux_transparent_window_style(&gtk_window);
-    }
-    linux_windowing::schedule_linux_window_style_refresh(window.clone());
-}
-
-#[cfg(target_os = "linux")]
 fn apply_always_on_top(
     window: &tauri::WebviewWindow,
     always_on_top: bool,
@@ -905,7 +897,6 @@ fn open_note_window(
     .min_inner_size(NOTE_MIN_WIDTH, NOTE_MIN_HEIGHT)
     .decorations(false)
     .transparent(true)
-    .shadow(false)
     .resizable(true)
     .skip_taskbar(true);
     if let (Some(px), Some(py)) = (x, y) {
@@ -917,8 +908,6 @@ fn open_note_window(
     }
 
     let win = win_builder.build().map_err(|e| e.to_string())?;
-
-    apply_linux_window_style(&win);
 
     // Hook window destruction to update status in notes.json and notify dashboard
     let app_handle_clone = app_handle.clone();
@@ -1059,7 +1048,6 @@ pub fn run() {
 
             // Prevent dashboard "main" window from destroying on close; hide instead
             if let Some(window) = app.get_webview_window("main") {
-                apply_linux_window_style(&window);
                 let window_clone = window.clone();
                 window.on_window_event(move |event| {
                     if let tauri::WindowEvent::CloseRequested { api, .. } = event {

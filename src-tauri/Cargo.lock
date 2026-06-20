@@ -80,8 +80,6 @@ name = "app"
 version = "0.1.0"
 dependencies = [
  "dirs",
- "gdk",
- "gdkx11",
  "gtk",
  "log",
  "reqwest 0.12.28",

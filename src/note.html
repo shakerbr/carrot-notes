@@ -64,10 +64,11 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
+      padding: var(--resize-gutter);
       box-sizing: border-box;
     }
 
-    /* Invisible resize hit targets along window edges */
+    /* External resize handles — outside the visible card, in the transparent gutter */
     .window-resize-layer {
       position: fixed;
       inset: 0;
@@ -94,8 +95,8 @@
       display: flex;
       flex-direction: column;
       border-radius: 8px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-      border: 1px solid rgba(0, 0, 0, 0.06);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 6px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0, 0, 0, 0.05);
       overflow: hidden;
       transition: background var(--motion-duration) var(--motion-ease), color var(--motion-duration) var(--motion-ease);
       position: relative;
