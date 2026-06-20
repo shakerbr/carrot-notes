@@ -214,12 +214,36 @@ fn save_settings(app_handle: tauri::AppHandle, settings_json: String) -> Result<
     fs::write(path, settings_json).map_err(|e| e.to_string())
 }
 
-// Sync notes to local folder
+fn notes_json_for_sync(notes_json: &str) -> Result<String, String> {
+    let notes_value: serde_json::Value = serde_json::from_str(notes_json)
+        .map_err(|e| format!("Failed to parse notes JSON: {}", e))?;
+
+    let filtered = if let Some(notes_arr) = notes_value.as_array() {
+        notes_arr
+            .iter()
+            .filter(|note| {
+                !note
+                    .get("isTemporary")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false)
+            })
+            .cloned()
+            .collect::<Vec<_>>()
+    } else {
+        return Err("Notes JSON is not an array".to_string());
+    };
+
+    serde_json::to_string(&filtered).map_err(|e| format!("Failed to serialize notes JSON: {}", e))
+}
+
+// Sync notes to local folder (temporary notes are excluded)
 #[tauri::command]
 fn sync_to_local_directory(dir_path: String, notes_json: String) -> Result<(), String> {
     if dir_path.trim().is_empty() {
         return Err("Directory path is empty".to_string());
     }
+
+    let notes_json = notes_json_for_sync(&notes_json)?;
     
     let target_dir = resolve_path(&dir_path);
     if !target_dir.exists() {
@@ -362,13 +386,14 @@ fn close_note_window(app_handle: tauri::AppHandle, id: String) -> Result<(), Str
 }
 
 
-// Sync notes to cloud URL using HTTP POST
+// Sync notes to cloud URL using HTTP POST (temporary notes are excluded)
 #[tauri::command]
 async fn sync_notes_to_cloud(
     endpoint: String,
     token: String,
     notes_json: String,
 ) -> Result<String, String> {
+    let notes_json = notes_json_for_sync(&notes_json)?;
     let client = reqwest::Client::new();
     let res = client
         .post(&endpoint)
