@@ -2976,7 +2976,7 @@
 
       listEl.innerHTML =
         renderRestoreGroup('Sync copy', syncItems, false) +
-        renderRestoreGroup('Deleted folder', deletedItems, syncItems.length > 0);
+        renderRestoreGroup('Trash', deletedItems, syncItems.length > 0);
     }
 
     window.scanRestorableNotes = async function() {
