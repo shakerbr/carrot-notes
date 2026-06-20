@@ -531,17 +531,25 @@
       border-color: rgba(255, 255, 255, 0.15);
     }
     
-    .temp-badge {
-      font-size: 8px;
-      font-weight: 700;
-      background: var(--note-accent);
-      color: white;
-      padding: 1px 4px;
-      border-radius: 3px;
-      text-transform: uppercase;
-      margin-left: 2px;
-      display: inline-block;
-      flex-shrink: 0;
+    /* Temporary note — pulsing edit (pencil) icon instead of Temp badge */
+    @keyframes tempEditPulse {
+      0%, 100% {
+        color: var(--note-accent);
+        opacity: 1;
+      }
+      50% {
+        color: var(--note-accent);
+        opacity: 0.35;
+      }
+    }
+
+    #edit-title-btn.temp-note-indicator {
+      opacity: 1 !important;
+      animation: tempEditPulse 1.6s ease-in-out infinite;
+    }
+
+    #edit-title-btn.temp-note-indicator svg {
+      stroke: var(--note-accent);
     }
     
     .header-controls {
@@ -1119,7 +1127,7 @@
       </div>
       <div id="title-container">
         <!-- Edit Title Button -->
-        <button id="edit-title-btn" class="btn-icon no-drag" title="Rename Note" style="width: 18px; height: 18px; padding: 0; background: transparent; border: none; cursor: pointer; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: inherit; opacity: 0.6;">
+        <button id="edit-title-btn" class="btn-icon no-drag" title="Temporary note — click to name and save" style="width: 18px; height: 18px; padding: 0; background: transparent; border: none; cursor: pointer; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; color: inherit; opacity: 0.6;">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 11px; height: 11px;">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -1137,7 +1145,6 @@
         </button>
 
         <input type="text" id="note-title-input" class="no-drag" placeholder="Untitled Note" style="display: none;" />
-        <span id="temp-badge" class="temp-badge" style="display:none;">Temp</span>
       </div>
 
       <div class="header-controls">
@@ -1386,7 +1393,7 @@
     let saveBtn = document.getElementById('save-btn');
     let lockBtn = document.getElementById('lock-btn');
     let noteTitleInput = document.getElementById('note-title-input');
-    let tempBadge = document.getElementById('temp-badge');
+    let editTitleBtn = document.getElementById('edit-title-btn');
 
     let notes = [];
     let noteData = null;
@@ -1525,18 +1532,31 @@
       if (isReadOnly() || !noteData) return;
       noteData.content = getEditorContent();
       if (settings.autosave) {
-        clearTimeout(typingTimer);
-        typingTimer = setTimeout(() => persistNotes(), settings.autosaveInterval * 1000 || 2000);
+        scheduleAutosave();
       } else {
         markUnsavedChanges();
       }
+    }
+
+    function scheduleAutosave() {
+      markUnsavedChanges();
+      clearTimeout(typingTimer);
+      typingTimer = setTimeout(() => {
+        if (noteData) {
+          noteData.content = getEditorContent();
+        }
+        persistNotes();
+        clearUnsavedChanges();
+      }, (settings.autosaveInterval || 5) * 1000);
     }
 
     function syncEditorContent() {
       if (!noteData) return;
       noteData.content = getEditorContent();
       if (settings.autosave) {
+        clearTimeout(typingTimer);
         persistNotes();
+        clearUnsavedChanges();
       } else {
         markUnsavedChanges();
       }
@@ -1626,7 +1646,7 @@
 
       noteTitleDisplay.innerText = noteData.title;
       noteTitleInput.value = noteData.title;
-      updateTempBadge();
+      updateTemporaryIndicator();
 
       // Pencil-gated title renaming logic
       editTitleBtn.addEventListener('click', (e) => {
@@ -1634,7 +1654,6 @@
         if (isReadOnly()) return;
         noteTitleDisplay.style.display = 'none';
         editTitleBtn.style.display = 'none';
-        tempBadge.style.display = 'none';
         
         noteTitleInput.style.display = 'inline-block';
         if (cancelTitleBtn) cancelTitleBtn.style.display = 'inline-flex';
@@ -1653,7 +1672,7 @@
         
         noteTitleDisplay.style.display = 'inline-block';
         editTitleBtn.style.display = 'inline-flex';
-        updateTempBadge();
+        updateTemporaryIndicator();
         
         isCancellingTitleEdit = false;
       };
@@ -1681,10 +1700,11 @@
         
         noteTitleDisplay.style.display = 'inline-block';
         editTitleBtn.style.display = 'inline-flex';
-        updateTempBadge();
+        updateTemporaryIndicator();
         
         if (settings.autosave) {
           persistNotes();
+          clearUnsavedChanges();
         } else {
           markUnsavedChanges();
         }
@@ -1765,7 +1785,7 @@
             // Update temporary status if changed
             if (updatedNote.isTemporary !== noteData.isTemporary) {
               noteData.isTemporary = updatedNote.isTemporary;
-              updateTempBadge();
+              updateTemporaryIndicator();
             }
           }
         });
@@ -1843,12 +1863,11 @@
       updateFormatStates();
     });
 
-    function updateTempBadge() {
-      if (noteData.isTemporary) {
-        tempBadge.style.display = 'inline-block';
-      } else {
-        tempBadge.style.display = 'none';
-      }
+    function updateTemporaryIndicator() {
+      if (!editTitleBtn || !noteData) return;
+      const isTemp = !!noteData.isTemporary;
+      editTitleBtn.classList.toggle('temp-note-indicator', isTemp);
+      editTitleBtn.title = isTemp ? 'Temporary note — click to name and save' : 'Rename Note';
     }
 
     function isReadOnly() {
@@ -2245,6 +2264,7 @@
 
     // Manual save handler
     window.saveNoteManual = function() {
+      clearTimeout(typingTimer);
       noteData.content = getEditorContent();
       
       if (noteData.isTemporary) {
@@ -2286,7 +2306,8 @@
       noteData.title = title;
       noteData.isTemporary = false;
       noteTitleInput.value = title;
-      updateTempBadge();
+      document.getElementById('note-title-display').innerText = title;
+      updateTemporaryIndicator();
       
       document.getElementById('save-dialog-overlay').style.display = 'none';
       
