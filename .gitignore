@@ -2,6 +2,9 @@ node_modules
 dist
 build
 
+# Local developer notes (not for publication)
+developer/
+
 # Rust / Tauri
 src-tauri/target/
 src-tauri/gen/

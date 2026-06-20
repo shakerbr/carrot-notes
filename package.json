@@ -1,7 +1,13 @@
 {
   "name": "carrotnotes",
   "version": "0.1.0",
-  "description": "Minimalist, high-performance sticky notes application",
+  "description": "Minimalist desktop sticky notes with rich markdown editing, floating windows, and local or self-hosted sync",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shakerbr/carrot-notes"
+  },
+  "homepage": "https://carrot-notes.spidrahub.com",
   "scripts": {
     "tauri": "tauri",
     "build:vendor": "node scripts/build-vendor.mjs",
