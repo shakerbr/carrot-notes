@@ -4,10 +4,21 @@
   "description": "Minimalist, high-performance sticky notes application",
   "scripts": {
     "tauri": "tauri",
-    "dev": "tauri dev",
-    "build": "tauri build"
+    "build:vendor": "node scripts/build-vendor.mjs",
+    "dev": "npm run build:vendor && tauri dev",
+    "build": "npm run build:vendor && tauri build",
+    "postinstall": "npm run build:vendor"
+  },
+  "dependencies": {
+    "@codemirror/commands": "^6.8.1",
+    "@codemirror/lang-markdown": "^6.3.3",
+    "@codemirror/language": "^6.11.1",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/view": "^6.37.2",
+    "marked": "^15.0.12"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.11.3"
+    "@tauri-apps/cli": "^2.11.3",
+    "esbuild": "^0.25.5"
   }
 }

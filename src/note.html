@@ -176,47 +176,81 @@
       color: white !important;
     }
 
-    /* Text handwriting editor */
-    .note-editor {
+    /* Markdown editor (CodeMirror) */
+    .note-editor-host {
       flex: 1;
-      font-family: var(--font-hand);
-      font-size: 20px;
-      line-height: 1.4;
-      padding: 12px;
-      outline: none;
-      border: none;
-      background: transparent;
-      overflow-y: auto;
-      overflow-wrap: break-word;
-      user-select: text;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
 
-    .note-editor, .note-editor * {
-      user-select: text !important;
+    .note-editor-host .cm-editor {
+      flex: 1;
+      height: 100%;
+      background: transparent !important;
+      color: var(--note-text);
     }
-    
-    .note-editor input[type="checkbox"] {
-      user-select: none !important;
+
+    .note-editor-host .cm-scroller {
+      overflow: auto;
+      font-family: inherit;
+      font-size: inherit;
+      line-height: 1.4;
     }
+
+    .note-editor-host .cm-content {
+      padding: 12px;
+      caret-color: var(--note-text);
+    }
+
+    .note-editor-host .cm-gutters {
+      display: none !important;
+    }
+
+    .note-editor-host .cm-activeLine {
+      background: transparent !important;
+    }
+
+    .note-editor-host.cm-focused .cm-cursor {
+      border-left-color: var(--note-accent) !important;
+    }
+
+    .note-editor-host .cm-selectionBackground,
+    .note-editor-host.cm-focused .cm-selectionBackground {
+      background: var(--note-accent-light) !important;
+    }
+
+    .note-editor-host .cm-line {
+      padding: 0 2px;
+    }
+
+    /* Markdown syntax accents */
+    .note-editor-host .tok-heading { color: var(--note-accent); font-weight: 600; }
+    .note-editor-host .tok-strong { font-weight: 700; }
+    .note-editor-host .tok-emphasis { font-style: italic; }
+    .note-editor-host .tok-strikethrough { text-decoration: line-through; opacity: 0.75; }
+    .note-editor-host .tok-list { color: var(--note-accent); }
+    .note-editor-host .tok-link { color: var(--note-accent); text-decoration: underline; }
 
     /* Custom thin scrollbar for note editor */
-    .note-editor::-webkit-scrollbar {
+    .note-editor-host .cm-scroller::-webkit-scrollbar {
       width: 12px;
     }
-    .note-editor::-webkit-scrollbar-track {
+    .note-editor-host .cm-scroller::-webkit-scrollbar-track {
       background: transparent;
     }
-    .note-editor::-webkit-scrollbar-thumb {
+    .note-editor-host .cm-scroller::-webkit-scrollbar-thumb {
       background-color: rgba(0, 0, 0, 0.15);
       border-radius: 6px;
       border: 3px solid transparent;
       background-clip: padding-box;
       transition: background-color var(--motion-duration) var(--motion-ease);
     }
-    #note-card.theme-dark .note-editor::-webkit-scrollbar-thumb {
+    #note-card.theme-dark .note-editor-host .cm-scroller::-webkit-scrollbar-thumb {
       background-color: rgba(255, 255, 255, 0.2);
     }
-    .note-editor::-webkit-scrollbar-thumb:hover {
+    .note-editor-host .cm-scroller::-webkit-scrollbar-thumb:hover {
       background-color: var(--note-accent) !important;
     }
 
@@ -328,118 +362,6 @@
       color: #fff;
     }
 
-    /* Shared list/checkbox indent from the editor edge */
-    .note-editor {
-      --list-indent: 1.4em;
-    }
-
-    /* Bullet and Numbered Lists */
-    .note-editor ul,
-    .note-editor ol {
-      list-style-position: outside !important;
-      padding-left: var(--list-indent) !important;
-      margin: 0.35em 0 !important;
-    }
-    .note-editor ul {
-      list-style-type: disc !important;
-    }
-    .note-editor ol {
-      list-style-type: decimal !important;
-    }
-    .note-editor li {
-      margin: 0.25em 0 !important;
-      padding-left: 0 !important;
-      user-select: text !important;
-      font-family: inherit !important;
-      font-size: inherit !important;
-      line-height: inherit !important;
-    }
-    .note-editor li::marker {
-      font-family: inherit !important;
-      font-size: inherit !important;
-      font-weight: inherit !important;
-      color: var(--note-accent) !important;
-    }
-
-    /* Checklist elements — sizes scale with note font via em units */
-    .checklist-item {
-      position: relative;
-      padding-left: var(--list-indent);
-      margin: 0.35em 0;
-      display: block;
-      min-height: 1.2em;
-      font-family: inherit;
-      font-size: inherit;
-      line-height: inherit;
-      outline: none !important;
-      border: none !important;
-      box-shadow: none !important;
-    }
-    
-    .checklist-item input[type="checkbox"] {
-      position: absolute;
-      left: 0.15em;
-      top: 0.18em;
-      appearance: none;
-      -webkit-appearance: none;
-      width: calc(1em - 0.2em);
-      height: calc(1em - 0.2em);
-      font-size: inherit;
-      border: 0.08em solid var(--note-text);
-      opacity: 0.7;
-      border-radius: 0.18em;
-      outline: none;
-      cursor: pointer;
-      transition: background-color var(--motion-duration) var(--motion-ease),
-                  border-color var(--motion-duration) var(--motion-ease),
-                  opacity var(--motion-duration) var(--motion-ease);
-      background: transparent;
-      margin: 0;
-      z-index: 5;
-      box-sizing: border-box;
-    }
-    
-    .checklist-item input[type="checkbox"]:checked {
-      background-color: var(--note-accent);
-      border-color: var(--note-accent);
-      opacity: 1;
-    }
-    
-    .checklist-item input[type="checkbox"]:checked::after {
-      content: "";
-      width: 0.18em;
-      height: 0.34em;
-      border: solid white;
-      border-width: 0 0.08em 0.08em 0;
-      transform: rotate(45deg);
-      position: absolute;
-      top: 0.07em;
-      left: 0.24em;
-    }
-
-    .checklist-text {
-      display: block;
-      outline: none !important;
-      border: none !important;
-      box-shadow: none !important;
-      min-height: 1em;
-      font-family: inherit;
-      font-size: inherit;
-      color: inherit;
-    }
-    .checklist-text:focus {
-      outline: none !important;
-      border: none !important;
-      box-shadow: none !important;
-    }
-
-    .checklist-item.checked .checklist-text {
-      text-decoration: line-through;
-      opacity: 0.6;
-    }
-
-
-    
     /* Layout wrappers for header collapse */
     #title-container {
       display: flex;
@@ -1282,8 +1204,8 @@
     <!-- Sub-toolbar for actions collapse -->
     <div id="sub-toolbar"></div>
 
-    <!-- Contenteditable handwriting canvas -->
-    <div id="editor" class="note-editor" contenteditable="true" placeholder="Type thoughts here..."></div>
+    <!-- Markdown editor -->
+    <div id="editor-host" class="note-editor-host"></div>
 
     <!-- Format Toast notification overlay -->
     <div id="format-toast"></div>
@@ -1306,6 +1228,8 @@
 
   </div>
 
+  <script src="vendor/codemirror.bundle.js"></script>
+  <script src="js/markdown-helpers.js"></script>
   <script>
     const invoke = window.__TAURI__ ? window.__TAURI__.core.invoke : null;
     const { getCurrentWindow } = window.__TAURI__ ? window.__TAURI__.window : { getCurrentWindow: null };
@@ -1315,7 +1239,10 @@
     const noteId = urlParams.get('id');
 
     let noteCardEl = document.getElementById('note-card');
-    let editorEl = document.getElementById('editor');
+    let editorHostEl = document.getElementById('editor-host');
+    let editorView = null;
+    let editableCompartment = null;
+    let typingTimer = null;
     let alwaysTopBtn = document.getElementById('always-top-btn');
     let moreBtn = document.getElementById('more-btn');
     let closeBtn = document.getElementById('close-btn');
@@ -1353,6 +1280,90 @@
 
     if (getCurrentWindow) {
       appWindow = getCurrentWindow();
+    }
+
+    function getEditorContent() {
+      return editorView ? editorView.state.doc.toString() : (noteData?.content || '');
+    }
+
+    function fontFamilyCSSValue(font) {
+      if (font === 'Caveat') return "var(--font-hand)";
+      if (font === 'Inter') return "var(--font-ui)";
+      if (font === 'Roboto') return "'Roboto', sans-serif";
+      if (font === 'Courier Prime') return "'Courier Prime', monospace";
+      return `'${font}', sans-serif`;
+    }
+
+    function applyEditorTypography() {
+      if (!editorHostEl || !noteData) return;
+      editorHostEl.style.fontFamily = fontFamilyCSSValue(noteData.fontFamily || settings.defaultFont.family);
+      editorHostEl.style.fontSize = noteData.fontSize || settings.defaultFont.size;
+    }
+
+    function initMarkdownEditor(initialContent) {
+      if (!window.CarrotCM || !editorHostEl) return;
+
+      editableCompartment = new CarrotCM.Compartment();
+      const state = CarrotCM.EditorState.create({
+        doc: initialContent || '',
+        extensions: [
+          CarrotCM.history(),
+          CarrotCM.markdown({ base: CarrotCM.markdownLanguage }),
+          CarrotCM.syntaxHighlighting(CarrotCM.defaultHighlightStyle),
+          CarrotCM.keymap.of([
+            ...CarrotCM.historyKeymap,
+            ...CarrotCM.defaultKeymap,
+          ]),
+          CarrotCM.EditorView.lineWrapping,
+          CarrotCM.drawSelection(),
+          CarrotCM.highlightActiveLine(),
+          editableCompartment.of(CarrotCM.EditorView.editable.of(true)),
+          CarrotCM.EditorView.updateListener.of((update) => {
+            if (update.docChanged) {
+              onEditorDocChanged();
+            }
+            if (update.selectionSet || update.focusChanged) {
+              updateFormatStates();
+            }
+          }),
+          CarrotCM.EditorView.theme({
+            '&': { height: '100%' },
+            '.cm-scroller': { fontFamily: 'inherit', fontSize: 'inherit', lineHeight: '1.4' },
+            '.cm-content': { padding: '12px' },
+          }),
+        ],
+      });
+
+      editorView = new CarrotCM.EditorView({ state, parent: editorHostEl });
+      applyEditorTypography();
+    }
+
+    function setEditorEditable(editable) {
+      if (!editorView || !editableCompartment) return;
+      editorView.dispatch({
+        effects: editableCompartment.reconfigure(CarrotCM.EditorView.editable.of(editable)),
+      });
+    }
+
+    function onEditorDocChanged() {
+      if (isReadOnly() || !noteData) return;
+      noteData.content = getEditorContent();
+      if (settings.autosave) {
+        clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => persistNotes(), settings.autosaveInterval * 1000 || 2000);
+      } else {
+        markUnsavedChanges();
+      }
+    }
+
+    function syncEditorContent() {
+      if (!noteData) return;
+      noteData.content = getEditorContent();
+      if (settings.autosave) {
+        persistNotes();
+      } else {
+        markUnsavedChanges();
+      }
     }
 
     function setupWindowResizeHandles() {
@@ -1518,8 +1529,8 @@
         }
       });
 
-      // Render content
-      editorEl.innerHTML = noteData.content || '';
+      // Render markdown editor
+      initMarkdownEditor(noteData.content || '');
       
       // Apply theme color
       applyColor(noteData.theme || 'theme-orange');
@@ -1538,9 +1549,6 @@
       if (appWindow && invoke && isAlwaysOnTop) {
         invoke('set_always_on_top', { alwaysOnTop: true }).catch(console.error);
       }
-
-      // Hook format checklist checkboxes listeners
-      attachChecklistListeners();
 
       // Populate custom color list in dropdown
       buildColorDropdownMenu();
@@ -1647,36 +1655,13 @@
         appWindow.onMoved(savePositionSize);
       }
 
-      // Auto-save on typing inside note (if autosave is enabled)
-      let typingTimer;
-      editorEl.addEventListener('keyup', () => {
-        if (isReadOnly()) return;
-        
-        if (settings.autosave) {
-          clearTimeout(typingTimer);
-          typingTimer = setTimeout(() => {
-            noteData.content = editorEl.innerHTML;
-            persistNotes();
-          }, settings.autosaveInterval * 1000 || 2000);
-        } else {
-          noteData.content = editorEl.innerHTML;
-          markUnsavedChanges();
-        }
-      });
+      // Auto-save handled by CodeMirror updateListener (onEditorDocChanged)
       
-      // Also save checklist changes
-      editorEl.addEventListener('click', (e) => {
-        if (e.target.type === 'checkbox') {
-          if (!settings.autosave) {
-            markUnsavedChanges();
-          }
-        }
-      });
-
       // Hook active formatting state listeners
-      document.addEventListener('selectionchange', updateFormatStates);
-      editorEl.addEventListener('keyup', updateFormatStates);
-      editorEl.addEventListener('mouseup', updateFormatStates);
+      if (editorView) {
+        editorView.dom.addEventListener('focus', updateFormatStates);
+        editorView.dom.addEventListener('blur', updateFormatStates);
+      }
       
       // Initialize format states
       updateFormatStates();
@@ -1939,11 +1924,7 @@
         el.addEventListener('click', (e) => {
           e.stopPropagation();
           const cmd = el.getAttribute('data-cmd');
-          if (cmd === 'insertChecklist') {
-            insertChecklist();
-          } else {
-            formatDoc(cmd);
-          }
+          formatDoc(cmd);
           closeAllDropdowns();
         });
       });
@@ -1954,16 +1935,9 @@
     }
 
     function applyFontFamily(font) {
-      if (font === 'Caveat') {
-        editorEl.style.fontFamily = "var(--font-hand)";
-      } else if (font === 'Inter') {
-        editorEl.style.fontFamily = "var(--font-ui)";
-      } else if (font === 'Roboto') {
-        editorEl.style.fontFamily = "'Roboto', sans-serif";
-      } else if (font === 'Courier Prime') {
-        editorEl.style.fontFamily = "'Courier Prime', monospace";
-      } else {
-        editorEl.style.fontFamily = `'${font}', sans-serif`;
+      if (noteData) {
+        noteData.fontFamily = font;
+        applyEditorTypography();
       }
       
       document.querySelectorAll('.font-option').forEach(el => {
@@ -1975,7 +1949,6 @@
       });
       
       if (noteData) {
-        noteData.fontFamily = font;
         if (settings.autosave) {
           persistNotes();
         } else {
@@ -1985,7 +1958,10 @@
     }
 
     function applyFontSize(size) {
-      editorEl.style.fontSize = size;
+      if (noteData) {
+        noteData.fontSize = size;
+        applyEditorTypography();
+      }
       
       document.querySelectorAll('.size-btn').forEach(el => {
         if (el.getAttribute('data-size') === size) {
@@ -1996,7 +1972,6 @@
       });
       
       if (noteData) {
-        noteData.fontSize = size;
         if (settings.autosave) {
           persistNotes();
         } else {
@@ -2036,7 +2011,7 @@
       const readOnlyActive = isReadOnly();
       
       if (readOnlyActive) {
-        editorEl.setAttribute('contenteditable', 'false');
+        setEditorEditable(false);
         noteTitleInput.disabled = true;
         lockBtn.classList.add('active');
         
@@ -2054,7 +2029,7 @@
           </svg>
         `;
       } else {
-        editorEl.setAttribute('contenteditable', 'true');
+        setEditorEditable(true);
         noteTitleInput.disabled = false;
         lockBtn.classList.remove('active');
         
@@ -2072,6 +2047,7 @@
           </svg>
         `;
       }
+      updateFormatStates();
     }
 
     // Save indicators
@@ -2093,8 +2069,7 @@
 
     // Manual save handler
     window.saveNoteManual = function() {
-      // Set editor content
-      noteData.content = editorEl.innerHTML;
+      noteData.content = getEditorContent();
       
       if (noteData.isTemporary) {
         // Show save dialog overlay
@@ -2149,290 +2124,18 @@
       if (appWindow) appWindow.close();
     });
 
-    // Formatting operations
-    window.formatDoc = function(cmd, val = null) {
-      if (isReadOnly()) return;
-      document.execCommand(cmd, false, val);
-      noteData.content = editorEl.innerHTML;
-      if (settings.autosave) {
-        persistNotes();
-      } else {
-        markUnsavedChanges();
-      }
+    // Markdown formatting operations
+    window.formatDoc = function(cmd) {
+      if (isReadOnly() || !editorView || !window.CarrotMarkdown) return;
+      editorView.focus();
+      CarrotMarkdown.applyFormat(editorView, cmd);
+      syncEditorContent();
+      updateFormatStates();
     };
 
-    // Helper to bind events (change, keydown) to checklist items
-    function bindChecklistEvents(container) {
-      const checkbox = container.querySelector('input[type="checkbox"]');
-      const textSpan = container.querySelector('.checklist-text');
-      
-      if (checkbox) {
-        checkbox.removeEventListener('change', handleCheckboxChange);
-        checkbox.addEventListener('change', handleCheckboxChange);
-      }
-      
-      if (textSpan) {
-        textSpan.onkeydown = (e) => {
-          if (isReadOnly()) return;
-          
-          const sel = window.getSelection();
-          const isEmpty = textSpan.innerText.trim() === '' || 
-                          textSpan.innerHTML === '&nbsp;' || 
-                          textSpan.innerHTML === '<br>' || 
-                          textSpan.innerHTML === '';
-          
-          // Check if cursor is at the very beginning of the textSpan
-          let isAtStart = false;
-          if (sel.rangeCount) {
-            const range = sel.getRangeAt(0);
-            if (range.startContainer === textSpan && range.startOffset === 0) {
-              isAtStart = true;
-            } else if (range.startContainer.nodeType === Node.TEXT_NODE && range.startContainer.parentElement === textSpan && range.startOffset === 0) {
-              isAtStart = true;
-            }
-          }
-          
-          if (e.key === 'Backspace' && isEmpty) {
-            e.preventDefault();
-            const prev = container.previousElementSibling;
-            container.remove();
-            
-            if (prev) {
-              const prevText = prev.querySelector('.checklist-text') || prev;
-              prevText.focus();
-              const range = document.createRange();
-              range.selectNodeContents(prevText);
-              range.collapse(false);
-              const sel = window.getSelection();
-              sel.removeAllRanges();
-              sel.addRange(range);
-            } else {
-              editorEl.focus();
-            }
-            
-            noteData.content = editorEl.innerHTML;
-            if (settings.autosave) {
-              persistNotes();
-            } else {
-              markUnsavedChanges();
-            }
-          } else if (e.key === 'Backspace' && isAtStart) {
-            e.preventDefault();
-            const prev = container.previousElementSibling;
-            if (prev && prev.classList.contains('checklist-item')) {
-              const prevText = prev.querySelector('.checklist-text');
-              if (prevText) {
-                const prevLastChild = prevText.lastChild;
-                
-                // Move children from textSpan to prevText
-                while (textSpan.firstChild) {
-                  prevText.appendChild(textSpan.firstChild);
-                }
-                
-                container.remove();
-                prevText.focus();
-                
-                const range = document.createRange();
-                if (prevLastChild) {
-                  range.setStartAfter(prevLastChild);
-                } else {
-                  range.setStart(prevText, 0);
-                }
-                range.collapse(true);
-                const sel = window.getSelection();
-                sel.removeAllRanges();
-                sel.addRange(range);
-              }
-            } else {
-              // Convert to normal paragraph
-              const content = textSpan.innerHTML;
-              const p = document.createElement('div');
-              p.innerHTML = content === '&nbsp;' ? '<br>' : content;
-              container.replaceWith(p);
-              
-              p.focus();
-              const range = document.createRange();
-              range.selectNodeContents(p);
-              range.collapse(true);
-              sel.removeAllRanges();
-              sel.addRange(range);
-            }
-            
-            noteData.content = editorEl.innerHTML;
-            if (settings.autosave) {
-              persistNotes();
-            } else {
-              markUnsavedChanges();
-            }
-          } else if (e.key === 'Enter' && isEmpty) {
-            e.preventDefault();
-            // Convert to normal paragraph and exit checklist mode
-            const p = document.createElement('div');
-            p.innerHTML = '<br>';
-            container.replaceWith(p);
-            
-            p.focus();
-            const range2 = document.createRange();
-            range2.selectNodeContents(p);
-            range2.collapse(true);
-            const sel2 = window.getSelection();
-            sel2.removeAllRanges();
-            sel2.addRange(range2);
-            
-            noteData.content = editorEl.innerHTML;
-            if (settings.autosave) {
-              persistNotes();
-            } else {
-              markUnsavedChanges();
-            }
-          } else if (e.key === 'Enter') {
-            e.preventDefault();
-            
-            let rightContent = '';
-            if (sel.rangeCount) {
-              const range = sel.getRangeAt(0);
-              const splitRange = document.createRange();
-              splitRange.setStart(range.startContainer, range.startOffset);
-              splitRange.setEndAfter(textSpan.lastChild || textSpan);
-              
-              const frag = splitRange.extractContents();
-              const tempDiv = document.createElement('div');
-              tempDiv.appendChild(frag);
-              rightContent = tempDiv.innerHTML;
-            }
-            
-            if (textSpan.innerHTML.trim() === '' || textSpan.innerHTML === '<br>') {
-              textSpan.innerHTML = '&nbsp;';
-            }
-            
-            const newContainer = document.createElement('div');
-            newContainer.className = 'checklist-item';
-            newContainer.setAttribute('contenteditable', 'false');
-
-            const newCheckbox = document.createElement('input');
-            newCheckbox.type = 'checkbox';
-
-            const newTextSpan = document.createElement('span');
-            newTextSpan.className = 'checklist-text';
-            newTextSpan.setAttribute('contenteditable', 'true');
-            newTextSpan.innerHTML = rightContent.trim() === '' ? '&nbsp;' : rightContent;
-            
-            newContainer.appendChild(newCheckbox);
-            newContainer.appendChild(newTextSpan);
-            
-            container.parentNode.insertBefore(newContainer, container.nextSibling);
-            
-            bindChecklistEvents(newContainer);
-            
-            setTimeout(() => {
-              newTextSpan.focus();
-              const range2 = document.createRange();
-              range2.setStart(newTextSpan.firstChild || newTextSpan, 0);
-              range2.collapse(true);
-              const sel2 = window.getSelection();
-              sel2.removeAllRanges();
-              sel2.addRange(range2);
-            }, 10);
-            
-            noteData.content = editorEl.innerHTML;
-            if (settings.autosave) {
-              persistNotes();
-            } else {
-              markUnsavedChanges();
-            }
-          }
-        };
-      }
-    }
-
-    // Checkbox insertion inside note
     window.insertChecklist = function() {
-      if (isReadOnly()) return;
-      editorEl.focus();
-      const sel = window.getSelection();
-      if (sel.rangeCount) {
-        const range = sel.getRangeAt(0);
-        
-        // Find current block element inside editorEl
-        let currentBlock = range.startContainer;
-        while (currentBlock && currentBlock.parentNode !== editorEl && currentBlock !== editorEl) {
-          currentBlock = currentBlock.parentNode;
-        }
-        
-        // Extract selected content or get text from current block
-        let textContent = '';
-        if (!range.collapsed) {
-          const frag = range.extractContents();
-          textContent = frag.textContent.trim();
-        } else if (currentBlock && currentBlock !== editorEl && currentBlock.innerText) {
-          textContent = currentBlock.innerText.trim();
-        }
-
-        const container = document.createElement('div');
-        container.className = 'checklist-item';
-        container.setAttribute('contenteditable', 'false');
-
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-
-        const textSpan = document.createElement('span');
-        textSpan.className = 'checklist-text';
-        textSpan.setAttribute('contenteditable', 'true');
-        textSpan.innerHTML = textContent !== '' ? textContent : '&nbsp;';
-
-        container.appendChild(checkbox);
-        container.appendChild(textSpan);
-
-        if (currentBlock && currentBlock !== editorEl) {
-          currentBlock.replaceWith(container);
-        } else {
-          range.insertNode(container);
-          range.collapse(false);
-        }
-
-        bindChecklistEvents(container);
-
-        setTimeout(() => {
-          textSpan.focus();
-          const range2 = document.createRange();
-          range2.selectNodeContents(textSpan);
-          range2.collapse(false);
-          sel.removeAllRanges();
-          sel.addRange(range2);
-        }, 10);
-
-        noteData.content = editorEl.innerHTML;
-        if (settings.autosave) {
-          persistNotes();
-        } else {
-          markUnsavedChanges();
-        }
-      }
+      formatDoc('insertChecklist');
     };
-
-    function handleCheckboxChange(e) {
-      const checkbox = e.target;
-      const parent = checkbox.parentElement;
-      if (checkbox.checked) {
-        checkbox.setAttribute('checked', 'true');
-        parent.classList.add('checked');
-      } else {
-        checkbox.removeAttribute('checked');
-        parent.classList.remove('checked');
-      }
-      noteData.content = editorEl.innerHTML;
-      if (settings.autosave) {
-        persistNotes();
-      } else {
-        markUnsavedChanges();
-      }
-    }
-
-    function attachChecklistListeners() {
-      editorEl.querySelectorAll('.checklist-item').forEach(container => {
-        bindChecklistEvents(container);
-      });
-    }
 
     // Persist storage and emit notes-changed event globally
     function persistNotes() {
@@ -2470,38 +2173,17 @@
     let isWindowDragging = false;
 
     function isEditorFocused() {
-      const active = document.activeElement;
-      if (active === editorEl || editorEl.contains(active)) return true;
-      const sel = window.getSelection();
-      if (sel && sel.rangeCount > 0) {
-        const node = sel.anchorNode;
-        if (node && editorEl.contains(node.nodeType === Node.TEXT_NODE ? node.parentNode : node)) {
-          return true;
-        }
-      }
-      return false;
+      return !!(editorView && editorView.hasFocus);
     }
 
-    function syncEditorAfterEdit() {
-      noteData.content = editorEl.innerHTML;
-      if (settings.autosave) {
-        persistNotes();
-      } else {
-        markUnsavedChanges();
-      }
-    }
-
-    // Check keybindings
+    // Check keybindings (CodeMirror handles undo/redo/select-all internally)
     document.addEventListener('keydown', (e) => {
       const isFormatKey = e.ctrlKey && (
         e.key.toLowerCase() === 'b' || 
         e.key.toLowerCase() === 'i' || 
         e.key.toLowerCase() === 'u' || 
         e.key.toLowerCase() === 's' || 
-        e.key.toLowerCase() === 'a' ||
-        e.key.toLowerCase() === 'z' ||
-        e.key.toLowerCase() === 'y' ||
-        (e.shiftKey && (e.key.toUpperCase() === 'L' || e.key.toUpperCase() === 'C' || e.key.toUpperCase() === 'X' || e.key.toUpperCase() === 'O' || e.key.toLowerCase() === 'z'))
+        (e.shiftKey && (e.key.toUpperCase() === 'L' || e.key.toUpperCase() === 'C' || e.key.toUpperCase() === 'X' || e.key.toUpperCase() === 'O'))
       );
       
       if (isReadOnly()) {
@@ -2514,29 +2196,8 @@
       const inEditor = isEditorFocused();
       const inTitleInput = document.activeElement === noteTitleInput;
 
-      if (e.ctrlKey && e.key.toLowerCase() === 'a' && inEditor) {
-        e.preventDefault();
-        document.execCommand('selectAll');
-        return;
-      }
-
-      if (e.ctrlKey && !e.shiftKey && e.key.toLowerCase() === 'z' && inEditor) {
-        e.preventDefault();
-        document.execCommand('undo');
-        syncEditorAfterEdit();
-        updateFormatStates();
-        return;
-      }
-
-      if (e.ctrlKey && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z')) && inEditor) {
-        e.preventDefault();
-        document.execCommand('redo');
-        syncEditorAfterEdit();
-        updateFormatStates();
-        return;
-      }
-
       if (inTitleInput) return;
+      if (!inEditor && isFormatKey && e.key.toLowerCase() !== 's') return;
 
       if (e.ctrlKey && e.key.toLowerCase() === 'b') {
         e.preventDefault();
@@ -2558,7 +2219,7 @@
         formatDoc('insertOrderedList');
       } else if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === 'C') {
         e.preventDefault();
-        insertChecklist();
+        formatDoc('insertChecklist');
       } else if (e.ctrlKey && e.key.toLowerCase() === 's') {
         e.preventDefault();
         saveNoteManual();
@@ -2630,18 +2291,18 @@
 
       container.innerHTML = '';
       
+      const active = window.CarrotMarkdown
+        ? CarrotMarkdown.getActiveFormats(editorView)
+        : { bold: false, italic: false, underline: false, strikeThrough: false };
+      
       formats.forEach(f => {
-        let isActive = false;
-        try {
-          isActive = document.queryCommandState(f.name);
-        } catch (e) {}
+        const isActive = !!active[f.name];
         
         const formatOption = document.querySelector(`.format-option[data-cmd="${f.name}"]`);
         if (formatOption) {
           formatOption.classList.toggle('active', isActive);
         }
         
-        // Check if it transitioned to active (enabled)
         if (isActive && !activeFormats[f.name]) {
           showFormatToast(`${f.label} Enabled`);
         }
@@ -2692,30 +2353,15 @@
       
       // Re-apply settings
       if (noteData) {
-        // Redraw font menu to incorporate any new custom fonts/sizes
         buildFontDropdownMenu();
         applyFontFamily(noteData.fontFamily || settings.defaultFont.family);
         applyFontSize(noteData.fontSize || settings.defaultFont.size);
+        applyEditorTypography();
         
-        // Redraw color menu
         buildColorDropdownMenu();
         applyColor(noteData.theme || settings.defaultColor || 'theme-orange');
       }
     }
-
-    // Format wrapper command override to immediately trigger updates
-    const origFormatDoc = window.formatDoc;
-    window.formatDoc = function(cmd, val = null) {
-      if (isReadOnly()) return;
-      document.execCommand(cmd, false, val);
-      noteData.content = editorEl.innerHTML;
-      if (settings.autosave) {
-        persistNotes();
-      } else {
-        markUnsavedChanges();
-      }
-      updateFormatStates();
-    };
   </script>
 </body>
 </html>

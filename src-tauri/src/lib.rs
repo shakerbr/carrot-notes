@@ -46,52 +46,6 @@ fn sanitize_filename(name: &str) -> String {
     sanitized.trim().to_string()
 }
 
-fn html_to_plain_text(html: &str) -> String {
-    let mut result = String::new();
-    let mut in_tag = false;
-    let mut tag_content = String::new();
-    let mut chars = html.chars().peekable();
-    
-    while let Some(c) = chars.next() {
-        if c == '<' {
-            in_tag = true;
-            tag_content.clear();
-        } else if c == '>' {
-            in_tag = false;
-            let tag = tag_content.to_lowercase();
-            if tag == "br" || tag == "br/" || tag == "div" || tag == "/div" || tag == "p" || tag == "/p" || tag == "li" || tag == "/li" || tag == "tr" || tag == "/tr" {
-                result.push('\n');
-            }
-        } else if in_tag {
-            tag_content.push(c);
-        } else {
-            result.push(c);
-        }
-    }
-    
-    let clean = result
-        .replace("&nbsp;", " ")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&amp;", "&")
-        .replace("\r", "");
-        
-    let mut final_res = String::new();
-    let mut last_was_newline = false;
-    for c in clean.chars() {
-        if c == '\n' {
-            if !last_was_newline {
-                final_res.push(c);
-                last_was_newline = true;
-            }
-        } else {
-            final_res.push(c);
-            last_was_newline = false;
-        }
-    }
-    final_res.trim().to_string()
-}
-
 // Update note open status in notes.json
 fn update_note_open_status(app_handle: &tauri::AppHandle, id: &str, is_open: bool) -> Result<(), String> {
     let path = get_notes_path(app_handle)?;
@@ -276,7 +230,7 @@ fn sync_to_local_directory(dir_path: String, notes_json: String) -> Result<(), S
     let backup_path = target_dir.join("carrotnotes_backup.json");
     fs::write(&backup_path, &notes_json).map_err(|e| format!("Failed to write master backup file: {}", e))?;
     
-    // Parse notes and save plain text copies
+    // Parse notes and save markdown copies
     let notes_value: serde_json::Value = serde_json::from_str(&notes_json)
         .map_err(|e| format!("Failed to parse notes JSON: {}", e))?;
         
@@ -287,11 +241,10 @@ fn sync_to_local_directory(dir_path: String, notes_json: String) -> Result<(), S
             let content = note.get("content").and_then(|v| v.as_str()).unwrap_or("");
             
             let sanitized_title = sanitize_filename(title);
-            let filename = format!("{}_{}.txt", sanitized_title, id);
+            let filename = format!("{}_{}.md", sanitized_title, id);
             let file_path = target_dir.join(filename);
             
-            let plain_text = html_to_plain_text(content);
-            fs::write(file_path, plain_text).map_err(|e| format!("Failed to write plain text note: {}", e))?;
+            fs::write(file_path, content).map_err(|e| format!("Failed to write markdown note: {}", e))?;
         }
     }
     

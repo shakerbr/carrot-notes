@@ -1716,6 +1716,8 @@
 
   </div>
 
+  <script src="vendor/marked.bundle.js"></script>
+  <script src="js/markdown-helpers.js"></script>
   <script>
     const invoke = window.__TAURI__ ? window.__TAURI__.core.invoke : null;
     const listen = window.__TAURI__ ? window.__TAURI__.event.listen : null;
@@ -2381,7 +2383,9 @@
             }
             
             const isOpen = note.isOpen || false;
-            const textContent = note.content ? stripHtml(note.content) : 'Empty note...';
+            const textContent = note.content
+              ? escapeHtml(formatNotePreview(note.content))
+              : 'Empty note...';
             
             // Badges
             const statusHtml = `<span class="status-badge ${isOpen ? 'active' : 'archived'}">${isOpen ? 'Floating' : 'Archived'}</span>`;
@@ -2506,9 +2510,20 @@
       }
     };
 
-    function stripHtml(html) {
-      let doc = new DOMParser().parseFromString(html, 'text/html');
-      return doc.body.textContent || "";
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function formatNotePreview(content) {
+      if (window.CarrotMarkdown) {
+        const preview = CarrotMarkdown.plainTextPreview(content);
+        if (preview) return preview.length > 280 ? preview.slice(0, 280) + '…' : preview;
+      }
+      return content.length > 280 ? content.slice(0, 280) + '…' : content;
     }
 
     // Create New Sticky Note
