@@ -531,21 +531,10 @@
       border-color: rgba(255, 255, 255, 0.15);
     }
     
-    /* Temporary note — pulsing edit (pencil) icon instead of Temp badge */
-    @keyframes tempEditPulse {
-      0%, 100% {
-        color: var(--note-accent);
-        opacity: 1;
-      }
-      50% {
-        color: var(--note-accent);
-        opacity: 0.35;
-      }
-    }
-
+    /* Temporary note — accent edit (pencil) icon until first save */
     #edit-title-btn.temp-note-indicator {
       opacity: 1 !important;
-      animation: tempEditPulse 1.6s ease-in-out infinite;
+      color: var(--note-accent);
     }
 
     #edit-title-btn.temp-note-indicator svg {
@@ -1437,6 +1426,7 @@
         if (noteData) {
           noteData.content = getEditorContent();
         }
+        promoteTemporaryNote();
         persistNotes();
         clearUnsavedChanges();
       }, (settings.autosaveInterval || 5) * 1000);
@@ -1447,6 +1437,7 @@
       noteData.content = getEditorContent();
       if (settings.autosave) {
         clearTimeout(typingTimer);
+        promoteTemporaryNote();
         persistNotes();
         clearUnsavedChanges();
       } else {
@@ -1758,7 +1749,13 @@
       if (!editTitleBtn || !noteData) return;
       const isTemp = !!noteData.isTemporary;
       editTitleBtn.classList.toggle('temp-note-indicator', isTemp);
-      editTitleBtn.title = isTemp ? 'Temporary note — not included in sync' : 'Rename Note';
+      editTitleBtn.title = isTemp ? 'Unsaved draft — not included in sync until saved' : 'Rename Note';
+    }
+
+    function promoteTemporaryNote() {
+      if (!noteData || !noteData.isTemporary) return;
+      noteData.isTemporary = false;
+      updateTemporaryIndicator();
     }
 
     function isReadOnly() {
@@ -2157,6 +2154,7 @@
     window.saveNoteManual = function() {
       clearTimeout(typingTimer);
       noteData.content = getEditorContent();
+      promoteTemporaryNote();
       persistNotes();
       clearUnsavedChanges();
     };
