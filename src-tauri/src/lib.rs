@@ -1,5 +1,6 @@
+use std::collections::{HashMap, HashSet};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tauri::{
     menu::{MenuBuilder, MenuItemBuilder},
     tray::{TrayIconBuilder, TrayIconEvent},
@@ -44,6 +45,203 @@ fn sanitize_filename(name: &str) -> String {
         .map(|c| if c.is_alphanumeric() || c == ' ' || c == '-' || c == '_' { c } else { '_' })
         .collect();
     sanitized.trim().to_string()
+}
+
+const BACKUP_FILENAME: &str = "carrotnotes_backup.json";
+const DELETED_SUBDIR: &str = "deleted";
+
+fn note_md_filename(title: &str, id: &str) -> String {
+    format!("{}_{}.md", sanitize_filename(title), id)
+}
+
+fn extract_note_id_from_md_filename(filename: &str) -> Option<String> {
+    if !filename.ends_with(".md") {
+        return None;
+    }
+    let base = &filename[..filename.len() - 3];
+    base.rfind("_note_")
+        .map(|idx| base[idx + 1..].to_string())
+}
+
+fn parse_notes_array(notes_json: &str) -> Result<Vec<serde_json::Value>, String> {
+    let value: serde_json::Value = serde_json::from_str(notes_json)
+        .map_err(|e| format!("Failed to parse notes JSON: {}", e))?;
+    value
+        .as_array()
+        .cloned()
+        .ok_or_else(|| "Notes JSON is not an array".to_string())
+}
+
+fn load_backup_notes(backup_path: &Path) -> Result<Vec<serde_json::Value>, String> {
+    if !backup_path.exists() {
+        return Ok(Vec::new());
+    }
+    let content = fs::read_to_string(backup_path)
+        .map_err(|e| format!("Failed to read sync backup: {}", e))?;
+    parse_notes_array(&content)
+}
+
+fn find_md_for_id(target_dir: &Path, id: &str) -> Option<PathBuf> {
+    let entries = fs::read_dir(target_dir).ok()?;
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let name = path.file_name()?.to_str()?;
+        if extract_note_id_from_md_filename(name).as_deref() == Some(id) {
+            return Some(path);
+        }
+    }
+    None
+}
+
+fn title_from_md_filename(filename: &str) -> String {
+    let base = filename.strip_suffix(".md").unwrap_or(filename);
+    if let Some(idx) = base.rfind("_note_") {
+        let title = base[..idx].replace('_', " ");
+        if title.trim().is_empty() {
+            "Untitled Note".to_string()
+        } else {
+            title
+        }
+    } else {
+        "Untitled Note".to_string()
+    }
+}
+
+fn build_minimal_note_from_md(path: &Path, id: &str) -> Option<serde_json::Value> {
+    let content = fs::read_to_string(path).ok()?;
+    let filename = path.file_name()?.to_str()?;
+    Some(serde_json::json!({
+        "id": id,
+        "title": title_from_md_filename(filename),
+        "content": content,
+        "isTemporary": false,
+        "isOpen": false
+    }))
+}
+
+fn archive_note_to_deleted(
+    target_dir: &Path,
+    note: &serde_json::Value,
+    root_md: Option<&Path>,
+) -> Result<(), String> {
+    let deleted_dir = target_dir.join(DELETED_SUBDIR);
+    fs::create_dir_all(&deleted_dir)
+        .map_err(|e| format!("Failed to create deleted directory: {}", e))?;
+
+    let id = note
+        .get("id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unknown");
+    let json_path = deleted_dir.join(format!("{}.json", id));
+    fs::write(
+        &json_path,
+        serde_json::to_string_pretty(note).map_err(|e| e.to_string())?,
+    )
+    .map_err(|e| format!("Failed to write deleted note metadata: {}", e))?;
+
+    if let Some(md_path) = root_md {
+        if md_path.exists() {
+            let file_name = md_path
+                .file_name()
+                .ok_or_else(|| "Invalid markdown path".to_string())?;
+            let dest = deleted_dir.join(file_name);
+            if dest.exists() {
+                fs::remove_file(&dest).ok();
+            }
+            if fs::rename(md_path, &dest).is_err() {
+                fs::copy(md_path, &dest)
+                    .and_then(|_| fs::remove_file(md_path))
+                    .map_err(|e| format!("Failed to move note markdown to deleted: {}", e))?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn remove_root_md_files_for_id(target_dir: &Path, id: &str) -> Result<(), String> {
+    let entries = match fs::read_dir(target_dir) {
+        Ok(entries) => entries,
+        Err(_) => return Ok(()),
+    };
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
+            continue;
+        };
+        if extract_note_id_from_md_filename(name).as_deref() == Some(id) {
+            fs::remove_file(&path).ok();
+        }
+    }
+
+    Ok(())
+}
+
+fn archive_removed_notes(
+    target_dir: &Path,
+    old_backup_notes: &[serde_json::Value],
+    active_ids: &HashSet<String>,
+) -> Result<(), String> {
+    for old_note in old_backup_notes {
+        let Some(id) = old_note.get("id").and_then(|v| v.as_str()) else {
+            continue;
+        };
+        if active_ids.contains(id) {
+            continue;
+        }
+        let md_path = find_md_for_id(target_dir, id);
+        archive_note_to_deleted(target_dir, old_note, md_path.as_deref())?;
+    }
+    Ok(())
+}
+
+fn archive_orphan_markdown_files(
+    target_dir: &Path,
+    active_ids: &HashSet<String>,
+    old_backup_notes: &[serde_json::Value],
+) -> Result<(), String> {
+    let entries = match fs::read_dir(target_dir) {
+        Ok(entries) => entries,
+        Err(_) => return Ok(()),
+    };
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if !path.is_file() {
+            continue;
+        }
+        let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
+            continue;
+        };
+        if name == BACKUP_FILENAME || !name.ends_with(".md") {
+            continue;
+        }
+        let Some(id) = extract_note_id_from_md_filename(name) else {
+            continue;
+        };
+        if active_ids.contains(&id) {
+            continue;
+        }
+
+        let note = old_backup_notes
+            .iter()
+            .find(|note| note.get("id").and_then(|v| v.as_str()) == Some(id.as_str()))
+            .cloned()
+            .or_else(|| build_minimal_note_from_md(&path, &id));
+
+        if let Some(note) = note {
+            archive_note_to_deleted(target_dir, &note, Some(&path))?;
+        }
+    }
+
+    Ok(())
 }
 
 // Update note open status in notes.json
@@ -215,28 +413,21 @@ fn save_settings(app_handle: tauri::AppHandle, settings_json: String) -> Result<
 }
 
 fn notes_json_for_sync(notes_json: &str) -> Result<String, String> {
-    let notes_value: serde_json::Value = serde_json::from_str(notes_json)
-        .map_err(|e| format!("Failed to parse notes JSON: {}", e))?;
-
-    let filtered = if let Some(notes_arr) = notes_value.as_array() {
-        notes_arr
-            .iter()
-            .filter(|note| {
-                !note
-                    .get("isTemporary")
-                    .and_then(|v| v.as_bool())
-                    .unwrap_or(false)
-            })
-            .cloned()
-            .collect::<Vec<_>>()
-    } else {
-        return Err("Notes JSON is not an array".to_string());
-    };
+    let notes_arr = parse_notes_array(notes_json)?;
+    let filtered: Vec<_> = notes_arr
+        .into_iter()
+        .filter(|note| {
+            !note
+                .get("isTemporary")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false)
+        })
+        .collect();
 
     serde_json::to_string(&filtered).map_err(|e| format!("Failed to serialize notes JSON: {}", e))
 }
 
-// Sync notes to local folder (temporary notes are excluded)
+// Sync notes to local folder (temporary notes are excluded; deleted notes move to deleted/)
 #[tauri::command]
 fn sync_to_local_directory(dir_path: String, notes_json: String) -> Result<(), String> {
     if dir_path.trim().is_empty() {
@@ -244,35 +435,250 @@ fn sync_to_local_directory(dir_path: String, notes_json: String) -> Result<(), S
     }
 
     let notes_json = notes_json_for_sync(&notes_json)?;
-    
+    let new_notes = parse_notes_array(&notes_json)?;
+
     let target_dir = resolve_path(&dir_path);
     if !target_dir.exists() {
         fs::create_dir_all(&target_dir).map_err(|e| format!("Failed to create sync directory: {}", e))?;
     }
-    
-    // Write master backup
-    let backup_path = target_dir.join("carrotnotes_backup.json");
-    fs::write(&backup_path, &notes_json).map_err(|e| format!("Failed to write master backup file: {}", e))?;
-    
-    // Parse notes and save markdown copies
-    let notes_value: serde_json::Value = serde_json::from_str(&notes_json)
-        .map_err(|e| format!("Failed to parse notes JSON: {}", e))?;
-        
-    if let Some(notes_arr) = notes_value.as_array() {
-        for note in notes_arr {
-            let id = note.get("id").and_then(|v| v.as_str()).unwrap_or("unknown");
-            let title = note.get("title").and_then(|v| v.as_str()).unwrap_or("Untitled Note");
-            let content = note.get("content").and_then(|v| v.as_str()).unwrap_or("");
-            
-            let sanitized_title = sanitize_filename(title);
-            let filename = format!("{}_{}.md", sanitized_title, id);
-            let file_path = target_dir.join(filename);
-            
-            fs::write(file_path, content).map_err(|e| format!("Failed to write markdown note: {}", e))?;
+
+    let backup_path = target_dir.join(BACKUP_FILENAME);
+    let old_backup_notes = load_backup_notes(&backup_path)?;
+
+    let active_ids: HashSet<String> = new_notes
+        .iter()
+        .filter_map(|note| note.get("id").and_then(|v| v.as_str()).map(String::from))
+        .collect();
+
+    archive_removed_notes(&target_dir, &old_backup_notes, &active_ids)?;
+    archive_orphan_markdown_files(&target_dir, &active_ids, &old_backup_notes)?;
+
+    fs::write(&backup_path, &notes_json)
+        .map_err(|e| format!("Failed to write master backup file: {}", e))?;
+
+    for note in &new_notes {
+        let id = note.get("id").and_then(|v| v.as_str()).unwrap_or("unknown");
+        let title = note
+            .get("title")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Untitled Note");
+        let content = note.get("content").and_then(|v| v.as_str()).unwrap_or("");
+
+        let filename = note_md_filename(title, id);
+        let file_path = target_dir.join(&filename);
+        remove_root_md_files_for_id(&target_dir, id)?;
+        fs::write(file_path, content)
+            .map_err(|e| format!("Failed to write markdown note: {}", e))?;
+    }
+
+    Ok(())
+}
+
+fn prepare_restored_note(mut note: serde_json::Value) -> Result<String, String> {
+    if let Some(obj) = note.as_object_mut() {
+        obj.insert("isOpen".to_string(), serde_json::Value::Bool(false));
+        if !obj.contains_key("isTemporary") {
+            obj.insert("isTemporary".to_string(), serde_json::Value::Bool(false));
         }
     }
-    
-    Ok(())
+    serde_json::to_string(&note).map_err(|e| e.to_string())
+}
+
+fn collect_restorable_notes(
+    current_notes_json: &str,
+    backup_notes: &[serde_json::Value],
+    deleted_dir: Option<&Path>,
+) -> Result<Vec<serde_json::Value>, String> {
+    let current_notes = parse_notes_array(current_notes_json).unwrap_or_default();
+    let current_by_id: HashMap<String, &serde_json::Value> = current_notes
+        .iter()
+        .filter_map(|note| {
+            note.get("id")
+                .and_then(|v| v.as_str())
+                .map(|id| (id.to_string(), note))
+        })
+        .collect();
+
+    let mut results: Vec<serde_json::Value> = Vec::new();
+    let mut seen_ids: HashSet<String> = HashSet::new();
+
+    for sync_note in backup_notes {
+        let Some(id) = sync_note.get("id").and_then(|v| v.as_str()) else {
+            continue;
+        };
+        if id.is_empty() {
+            continue;
+        }
+
+        let sync_title = sync_note
+            .get("title")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Untitled Note");
+        let sync_content = sync_note
+            .get("content")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+
+        if let Some(current) = current_by_id.get(id) {
+            let current_title = current
+                .get("title")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            let current_content = current
+                .get("content")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            if sync_title != current_title || sync_content != current_content {
+                results.push(serde_json::json!({
+                    "id": id,
+                    "title": sync_title,
+                    "source": "sync",
+                    "reason": "modified_locally"
+                }));
+                seen_ids.insert(id.to_string());
+            }
+        } else {
+            results.push(serde_json::json!({
+                "id": id,
+                "title": sync_title,
+                "source": "sync",
+                "reason": "deleted_locally"
+            }));
+            seen_ids.insert(id.to_string());
+        }
+    }
+
+    if let Some(deleted_dir) = deleted_dir {
+        if deleted_dir.exists() {
+            for entry in fs::read_dir(deleted_dir).map_err(|e| e.to_string())? {
+                let path = entry.map_err(|e| e.to_string())?.path();
+                if path.extension().and_then(|ext| ext.to_str()) != Some("json") {
+                    continue;
+                }
+                let Some(id) = path.file_stem().and_then(|stem| stem.to_str()) else {
+                    continue;
+                };
+                if seen_ids.contains(id) || current_by_id.contains_key(id) {
+                    continue;
+                }
+
+                let note: serde_json::Value = serde_json::from_str(
+                    &fs::read_to_string(&path).map_err(|e| e.to_string())?,
+                )
+                .map_err(|e| format!("Failed to parse deleted note metadata: {}", e))?;
+
+                results.push(serde_json::json!({
+                    "id": id,
+                    "title": note.get("title").and_then(|v| v.as_str()).unwrap_or("Untitled Note"),
+                    "source": "deleted",
+                    "reason": "archived"
+                }));
+                seen_ids.insert(id.to_string());
+            }
+        }
+    }
+
+    Ok(results)
+}
+
+#[tauri::command]
+fn list_restorable_sync_notes(dir_path: String, current_notes_json: String) -> Result<String, String> {
+    let target_dir = resolve_path(&dir_path);
+    if !target_dir.exists() {
+        return Ok("[]".to_string());
+    }
+
+    let backup_path = target_dir.join(BACKUP_FILENAME);
+    let backup_notes = load_backup_notes(&backup_path)?;
+    let deleted_dir = target_dir.join(DELETED_SUBDIR);
+    let results = collect_restorable_notes(&current_notes_json, &backup_notes, Some(&deleted_dir))?;
+    serde_json::to_string(&results).map_err(|e| e.to_string())
+}
+
+async fn fetch_cloud_sync_notes(endpoint: String, token: String) -> Result<Vec<serde_json::Value>, String> {
+    if endpoint.trim().is_empty() {
+        return Err("Cloud endpoint URL is empty".to_string());
+    }
+
+    let client = reqwest::Client::new();
+    let mut request = client.get(&endpoint).header("Accept", "application/json");
+    if !token.trim().is_empty() {
+        request = request.header("Authorization", format!("Bearer {}", token));
+    }
+
+    let res = request.send().await.map_err(|e| e.to_string())?;
+    let status = res.status();
+    let body = res.text().await.map_err(|e| e.to_string())?;
+
+    if !status.is_success() {
+        return Err(format!("Cloud fetch failed (Status {}): {}", status, body));
+    }
+
+    parse_notes_array(&body)
+}
+
+#[tauri::command]
+async fn list_restorable_cloud_notes(
+    endpoint: String,
+    token: String,
+    current_notes_json: String,
+) -> Result<String, String> {
+    let backup_notes = fetch_cloud_sync_notes(endpoint, token).await?;
+    let results = collect_restorable_notes(&current_notes_json, &backup_notes, None)?;
+    serde_json::to_string(&results).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn restore_note_from_sync(dir_path: String, note_id: String, source: String) -> Result<String, String> {
+    let target_dir = resolve_path(&dir_path);
+    let mut note = match source.as_str() {
+        "deleted" => {
+            let json_path = target_dir
+                .join(DELETED_SUBDIR)
+                .join(format!("{}.json", note_id));
+            if !json_path.exists() {
+                return Err(format!("Deleted note {} was not found in sync folder", note_id));
+            }
+            serde_json::from_str(
+                &fs::read_to_string(&json_path).map_err(|e| e.to_string())?,
+            )
+            .map_err(|e| format!("Failed to parse deleted note metadata: {}", e))?
+        }
+        _ => {
+            let backup_path = target_dir.join(BACKUP_FILENAME);
+            load_backup_notes(&backup_path)?
+                .into_iter()
+                .find(|note| note.get("id").and_then(|v| v.as_str()) == Some(note_id.as_str()))
+                .ok_or_else(|| format!("Note {} was not found in sync backup", note_id))?
+        }
+    };
+
+    if source == "deleted" {
+        if let Some(md_path) = find_md_for_id(&target_dir.join(DELETED_SUBDIR), &note_id) {
+            if let Ok(content) = fs::read_to_string(&md_path) {
+                if let Some(obj) = note.as_object_mut() {
+                    obj.insert("content".to_string(), serde_json::Value::String(content));
+                }
+            }
+        }
+    }
+
+    prepare_restored_note(note)
+}
+
+#[tauri::command]
+async fn restore_note_from_cloud(
+    endpoint: String,
+    token: String,
+    note_id: String,
+) -> Result<String, String> {
+    let backup_notes = fetch_cloud_sync_notes(endpoint, token).await?;
+    let note = backup_notes
+        .into_iter()
+        .find(|note| note.get("id").and_then(|v| v.as_str()) == Some(note_id.as_str()))
+        .ok_or_else(|| format!("Note {} was not found in cloud sync backup", note_id))?;
+
+    prepare_restored_note(note)
 }
 
 // Cross-platform Always on Top setter, with Linux Wayland GTK WindowTypeHint utility fix
@@ -516,7 +922,11 @@ pub fn run() {
             open_note_window,
             close_note_window,
             sync_notes_to_cloud,
-            sync_to_local_directory
+            sync_to_local_directory,
+            list_restorable_sync_notes,
+            list_restorable_cloud_notes,
+            restore_note_from_sync,
+            restore_note_from_cloud
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

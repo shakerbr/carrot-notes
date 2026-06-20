@@ -652,6 +652,98 @@
     }
     body.dark-mode .sync-status { color: rgba(255,255,255,0.5); }
 
+    .restore-hint {
+      font-size: 11px;
+      opacity: 0.7;
+      line-height: 1.45;
+      margin: 0 0 10px;
+    }
+    .restore-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin-top: 10px;
+    }
+    .restore-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .restore-group + .restore-group {
+      margin-top: 14px;
+    }
+    .restore-group-separator {
+      height: 1px;
+      background: rgba(0, 0, 0, 0.08);
+      margin-bottom: 12px;
+    }
+    body.dark-mode .restore-group-separator {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .restore-group-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      opacity: 0.55;
+      margin-bottom: 2px;
+    }
+    .restore-group-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .restore-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.03);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+    }
+    body.dark-mode .restore-item {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+    .restore-item-info {
+      min-width: 0;
+      flex: 1;
+    }
+    .restore-item-title {
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .restore-item-meta {
+      font-size: 10px;
+      opacity: 0.65;
+      margin-top: 2px;
+    }
+    .btn-restore {
+      background: transparent;
+      color: var(--primary-color);
+      border: 1px solid var(--primary-color);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .btn-restore:hover {
+      background: rgba(255, 122, 0, 0.08);
+    }
+    .restore-empty {
+      font-size: 11px;
+      opacity: 0.6;
+      text-align: center;
+      padding: 8px 0;
+    }
+
     /* About Graphic center layout */
     .about-layout {
       display: flex;
@@ -1456,6 +1548,40 @@
         </button>
         
         <div id="cloud-sync-status" class="sync-status">Status: Standby</div>
+      </div>
+
+      <!-- Restore from Sync -->
+      <div class="settings-card">
+        <div class="section-title">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <polyline points="23 20 23 14 17 14"></polyline>
+            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10"></path>
+            <path d="M3.51 15a9 9 0 0 0 14.85 3.36L23 14"></path>
+          </svg>
+          <span>Restore from Sync</span>
+        </div>
+
+        <p class="restore-hint">Recover notes from a sync source — including versions from before local edits or deletions, if you have not synced since.</p>
+
+        <div class="form-group">
+          <label>SYNC SOURCE</label>
+          <select id="restore-sync-source">
+            <option value="local">Local Folder</option>
+            <option value="cloud">Cloud Server</option>
+          </select>
+        </div>
+
+        <button onclick="scanRestorableNotes()" class="btn-action-primary">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <span>Find Restorable Notes</span>
+        </button>
+
+        <div id="restore-status" class="sync-status">Status: Standby</div>
+        <div id="restore-list" class="restore-list"></div>
       </div>
       
     </div>
@@ -2790,6 +2916,185 @@
           statusEl.textContent = `Status: Mock Sync Success (Web Sandbox) - ${new Date().toLocaleTimeString()}`;
           statusEl.style.color = '#3cd69e';
         }, 1000);
+      }
+    };
+
+    const restoreReasonLabels = {
+      deleted_locally: 'Deleted in app — still in sync source',
+      modified_locally: 'Changed in app — older copy in sync source',
+      archived: 'Archived in sync deleted folder'
+    };
+
+    function getRestoreSyncSource() {
+      return document.getElementById('restore-sync-source')?.value || 'local';
+    }
+
+    function setRestoreStatus(message, color = '') {
+      const statusEl = document.getElementById('restore-status');
+      if (!statusEl) return;
+      statusEl.textContent = message;
+      statusEl.style.color = color;
+    }
+
+    function renderRestoreItem(item) {
+      const reason = restoreReasonLabels[item.reason] || item.reason;
+      return `
+        <div class="restore-item">
+          <div class="restore-item-info">
+            <div class="restore-item-title">${escapeHtml(item.title || 'Untitled Note')}</div>
+            <div class="restore-item-meta">${escapeHtml(reason)}</div>
+          </div>
+          <button class="btn-restore no-drag" onclick="restoreNoteFromSync('${item.id}', '${item.source}')">Restore</button>
+        </div>
+      `;
+    }
+
+    function renderRestoreGroup(label, items, withSeparator) {
+      if (!items.length) return '';
+      return `
+        <div class="restore-group">
+          ${withSeparator ? '<div class="restore-group-separator"></div>' : ''}
+          <div class="restore-group-label">${escapeHtml(label)}</div>
+          <div class="restore-group-list">
+            ${items.map(renderRestoreItem).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderRestorableNotes(items) {
+      const listEl = document.getElementById('restore-list');
+      if (!listEl) return;
+
+      if (!items.length) {
+        listEl.innerHTML = '<div class="restore-empty">No restorable notes found for the selected sync source.</div>';
+        return;
+      }
+
+      const syncItems = items.filter(item => item.source !== 'deleted');
+      const deletedItems = items.filter(item => item.source === 'deleted');
+
+      listEl.innerHTML =
+        renderRestoreGroup('Sync copy', syncItems, false) +
+        renderRestoreGroup('Deleted folder', deletedItems, syncItems.length > 0);
+    }
+
+    window.scanRestorableNotes = async function() {
+      const listEl = document.getElementById('restore-list');
+      const syncSource = getRestoreSyncSource();
+      const notesJson = localStorage.getItem('carrotnotes_notes') || '[]';
+
+      if (listEl) {
+        listEl.innerHTML = '';
+      }
+      setRestoreStatus('Status: Scanning...');
+
+      if (!invoke) {
+        renderRestorableNotes([]);
+        setRestoreStatus('Status: Restore is unavailable outside the desktop app');
+        return;
+      }
+
+      try {
+        let resultJson = '[]';
+
+        if (syncSource === 'cloud') {
+          const endpoint = settings.cloudSync?.endpoint?.trim();
+          const token = settings.cloudSync?.token?.trim() || '';
+          if (!endpoint) {
+            setRestoreStatus('Status: Error - Missing cloud endpoint URL', '#ff4d4d');
+            if (listEl) {
+              listEl.innerHTML = '<div class="restore-empty">Configure a cloud sync endpoint above first.</div>';
+            }
+            return;
+          }
+          resultJson = await invoke('list_restorable_cloud_notes', {
+            endpoint,
+            token,
+            currentNotesJson: notesJson
+          });
+        } else {
+          const dirPath = settings.localSync?.dir?.trim();
+          if (!dirPath) {
+            setRestoreStatus('Status: Error - Missing local sync folder path', '#ff4d4d');
+            if (listEl) {
+              listEl.innerHTML = '<div class="restore-empty">Configure a local sync directory above first.</div>';
+            }
+            return;
+          }
+          resultJson = await invoke('list_restorable_sync_notes', { dirPath, currentNotesJson: notesJson });
+        }
+
+        const items = JSON.parse(resultJson || '[]');
+        renderRestorableNotes(Array.isArray(items) ? items : []);
+        const count = Array.isArray(items) ? items.length : 0;
+        setRestoreStatus(
+          count
+            ? `Status: Found ${count} restorable note${count === 1 ? '' : 's'} - ${new Date().toLocaleTimeString()}`
+            : `Status: No restorable notes found - ${new Date().toLocaleTimeString()}`,
+          count ? '#3cd69e' : ''
+        );
+      } catch (err) {
+        if (listEl) {
+          listEl.innerHTML = `<div class="restore-empty">Scan failed: ${escapeHtml(String(err))}</div>`;
+        }
+        setRestoreStatus(`Status: Error - ${err}`, '#ff4d4d');
+      }
+    };
+
+    window.restoreNoteFromSync = async function(noteId, source) {
+      if (!invoke) return;
+
+      const syncSource = getRestoreSyncSource();
+      const confirmMsg = source === 'deleted'
+        ? 'Restore this note from the sync deleted folder?'
+        : 'Replace the local version with the copy from your sync source?';
+
+      if (!await showCustomConfirm(confirmMsg, 'Restore Note')) return;
+
+      setRestoreStatus('Status: Restoring...');
+
+      try {
+        let noteJson;
+
+        if (syncSource === 'cloud') {
+          const endpoint = settings.cloudSync?.endpoint?.trim();
+          const token = settings.cloudSync?.token?.trim() || '';
+          if (!endpoint) {
+            throw new Error('Missing cloud endpoint URL');
+          }
+          noteJson = await invoke('restore_note_from_cloud', { endpoint, token, noteId });
+        } else {
+          const dirPath = settings.localSync?.dir?.trim();
+          if (!dirPath) {
+            throw new Error('Missing local sync folder path');
+          }
+          noteJson = await invoke('restore_note_from_sync', { dirPath, noteId, source });
+        }
+
+        const restored = JSON.parse(noteJson);
+        const idx = notes.findIndex(n => n.id === noteId);
+
+        if (idx >= 0) {
+          const wasOpen = notes[idx].isOpen;
+          notes[idx] = { ...restored, isOpen: wasOpen };
+        } else {
+          restored.isOpen = false;
+          notes.push(restored);
+        }
+
+        persistNotes();
+        loadAllNotes(false);
+        await scanRestorableNotes();
+
+        if (window.__TAURI__) {
+          window.__TAURI__.event.emit('notes-changed');
+        }
+
+        setRestoreStatus(`Status: Restored "${restored.title || 'Untitled Note'}" - ${new Date().toLocaleTimeString()}`, '#3cd69e');
+      } catch (err) {
+        setRestoreStatus(`Status: Error - ${err}`, '#ff4d4d');
+        await showCustomAlert(String(err), 'Restore Failed');
       }
     };
 
