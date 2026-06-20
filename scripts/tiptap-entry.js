@@ -11,22 +11,9 @@ const CarrotShortcuts = Extension.create({
   priority: 1000,
   addKeyboardShortcuts() {
     return {
-      'Mod-b': () => {
-        window.formatDoc?.('bold');
-        return true;
-      },
-      'Mod-i': () => {
-        window.formatDoc?.('italic');
-        return true;
-      },
-      'Mod-u': () => {
-        window.formatDoc?.('underline');
-        return true;
-      },
-      'Mod-Shift-x': () => {
-        window.formatDoc?.('strikeThrough');
-        return true;
-      },
+      'Mod-b': () => this.editor.commands.toggleBold(),
+      'Mod-i': () => this.editor.commands.toggleItalic(),
+      'Mod-u': () => this.editor.commands.toggleUnderline(),
       'Mod-s': () => {
         if (typeof window.__carrotSave === 'function') {
           window.__carrotSave();
@@ -46,6 +33,7 @@ const CarrotShortcuts = Extension.create({
         window.__carrotApplyLineFormat?.('checklist');
         return true;
       },
+      'Mod-Shift-x': () => this.editor.commands.toggleStrike(),
     };
   },
 });

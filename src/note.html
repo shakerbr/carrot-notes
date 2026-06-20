@@ -41,14 +41,13 @@
 
     /* Editor must allow text selection and checkbox clicks */
     .note-editor-host,
-    .note-editor-host * {
+    .note-editor-host .ProseMirror,
+    .note-editor-host .ProseMirror * {
       user-select: text !important;
     }
 
-    .note-editor-host li[data-type="taskItem"] > label,
-    .note-editor-host li[data-type="taskItem"] > label input[type="checkbox"],
-    .note-editor-host ul[data-type="taskList"] li > label,
-    .note-editor-host ul[data-type="taskList"] li > label input[type="checkbox"] {
+    .note-editor-host .ProseMirror li[data-type="taskItem"] > label,
+    .note-editor-host .ProseMirror li[data-type="taskItem"] > label input[type="checkbox"] {
       user-select: none !important;
       pointer-events: auto !important;
       cursor: pointer;
@@ -201,7 +200,7 @@
     }
 
     .note-editor-host .tiptap,
-    .note-editor-host {
+    .note-editor-host .ProseMirror {
       flex: 1;
       min-height: 100%;
       height: 100%;
@@ -217,16 +216,16 @@
       background: transparent;
     }
 
-    .note-editor-host:focus {
+    .note-editor-host .ProseMirror:focus {
       outline: none;
     }
 
-    .note-editor-host p {
+    .note-editor-host .ProseMirror p {
       margin: 0.25em 0;
     }
 
-    .note-editor-host p.is-editor-empty:first-child::before,
-    .note-editor-host .is-empty::before {
+    .note-editor-host .ProseMirror p.is-editor-empty:first-child::before,
+    .note-editor-host .ProseMirror .is-empty::before {
       content: attr(data-placeholder);
       color: var(--note-text);
       opacity: 0.35;
@@ -235,75 +234,73 @@
       height: 0;
     }
 
-    .note-editor-host ul:not([data-type="taskList"]),
-    .note-editor-host ol {
+    .note-editor-host .ProseMirror ul:not([data-type="taskList"]),
+    .note-editor-host .ProseMirror ol {
       list-style-position: outside;
       padding-left: 1.4em;
       margin: 0.35em 0;
     }
 
-    .note-editor-host ul:not([data-type="taskList"]) {
+    .note-editor-host .ProseMirror ul:not([data-type="taskList"]) {
       list-style-type: disc;
     }
 
-    .note-editor-host ol {
+    .note-editor-host .ProseMirror ol {
       list-style-type: decimal;
     }
 
-    .note-editor-host li {
+    .note-editor-host .ProseMirror li {
       margin: 0.2em 0;
     }
 
-    .note-editor-host li::marker {
+    .note-editor-host .ProseMirror li::marker {
       color: var(--note-accent);
     }
 
-    /* Task list / checklist — checkbox anchored left, text flows beside it */
-    .note-editor-host ul[data-type="taskList"] {
+    /* Task list / checklist */
+    .note-editor-host .ProseMirror ul[data-type="taskList"] {
       list-style: none !important;
       padding-left: 0 !important;
       margin: 0.35em 0;
     }
 
-    .note-editor-host ul[data-type="taskList"] > li,
-    .note-editor-host ul[data-type="taskList"] li[data-type="taskItem"] {
-      position: relative;
-      display: block !important;
+    .note-editor-host .ProseMirror li[data-type="taskItem"] {
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: flex-start !important;
       list-style: none !important;
-      margin: 0.35em 0;
-      min-height: 1.2em;
-      padding-left: 1.4em;
+      gap: 0.45em;
+      margin: 0.3em 0;
+      padding: 0;
     }
 
-    .note-editor-host ul[data-type="taskList"] li::marker {
+    .note-editor-host .ProseMirror li[data-type="taskItem"]::marker {
       content: none !important;
     }
 
-    .note-editor-host ul[data-type="taskList"] li > label {
-      position: absolute;
-      left: 0;
-      top: 0.18em;
-      display: block !important;
-      width: calc(1em - 0.2em);
-      height: calc(1em - 0.2em);
+    .note-editor-host .ProseMirror li[data-type="taskItem"] > label {
+      display: inline-flex !important;
+      align-items: flex-start;
+      flex: 0 0 auto;
       margin: 0;
       padding: 0;
+      line-height: inherit;
       user-select: none !important;
       pointer-events: auto !important;
       cursor: pointer;
-      line-height: 1;
     }
 
-    .note-editor-host ul[data-type="taskList"] li > label > span {
+    /* Hide Tiptap's empty checkbox styler span */
+    .note-editor-host .ProseMirror li[data-type="taskItem"] > label > span {
       display: none !important;
     }
 
-    .note-editor-host ul[data-type="taskList"] li > label input[type="checkbox"] {
+    .note-editor-host .ProseMirror li[data-type="taskItem"] > label input[type="checkbox"] {
       appearance: none;
       -webkit-appearance: none;
-      display: block;
-      width: 100%;
-      height: 100%;
+      display: inline-block;
+      width: calc(1em - 0.2em);
+      height: calc(1em - 0.2em);
       font-size: inherit;
       border: 0.08em solid var(--note-text);
       opacity: 0.7;
@@ -311,20 +308,20 @@
       outline: none;
       cursor: pointer;
       background: transparent;
-      margin: 0;
-      padding: 0;
+      margin: 0.15em 0 0 0;
       position: relative;
       box-sizing: border-box;
       pointer-events: auto !important;
+      flex-shrink: 0;
     }
 
-    .note-editor-host ul[data-type="taskList"] li > label input[type="checkbox"]:checked {
+    .note-editor-host .ProseMirror li[data-type="taskItem"] > label input[type="checkbox"]:checked {
       background-color: var(--note-accent);
       border-color: var(--note-accent);
       opacity: 1;
     }
 
-    .note-editor-host ul[data-type="taskList"] li > label input[type="checkbox"]:checked::after {
+    .note-editor-host .ProseMirror li[data-type="taskItem"] > label input[type="checkbox"]:checked::after {
       content: "";
       width: 0.18em;
       height: 0.34em;
@@ -336,50 +333,49 @@
       left: 0.24em;
     }
 
-    .note-editor-host ul[data-type="taskList"] li > div,
-    .note-editor-host ul[data-type="taskList"] li > p {
-      margin: 0 !important;
-      padding: 0;
-      display: block;
+    .note-editor-host .ProseMirror li[data-type="taskItem"] > div {
+      flex: 1 1 auto;
+      min-width: 0;
     }
 
-    .note-editor-host ul[data-type="taskList"] li > div > p {
+    .note-editor-host .ProseMirror li[data-type="taskItem"] > div > p,
+    .note-editor-host .ProseMirror li[data-type="taskItem"] > p {
       margin: 0 !important;
+      flex: 1 1 auto;
     }
 
-    .note-editor-host ul[data-type="taskList"] li[data-checked="true"] > div,
-    .note-editor-host ul[data-type="taskList"] li[data-checked="true"] > div > p {
+    .note-editor-host .ProseMirror li[data-type="taskItem"][data-checked="true"] > div {
       text-decoration: line-through;
       opacity: 0.6;
     }
 
-    .note-editor-host ::selection {
+    .note-editor-host .ProseMirror ::selection {
       background: var(--note-accent-light);
     }
 
-    .note-editor-host strong { font-weight: 700; }
-    .note-editor-host em { font-style: italic; }
-    .note-editor-host u { text-decoration: underline; }
-    .note-editor-host s { text-decoration: line-through; opacity: 0.75; }
+    .note-editor-host .ProseMirror strong { font-weight: 700; }
+    .note-editor-host .ProseMirror em { font-style: italic; }
+    .note-editor-host .ProseMirror u { text-decoration: underline; }
+    .note-editor-host .ProseMirror s { text-decoration: line-through; opacity: 0.75; }
 
     /* Custom thin scrollbar for note editor */
-    .note-editor-host::-webkit-scrollbar {
+    .note-editor-host .ProseMirror::-webkit-scrollbar {
       width: 12px;
     }
-    .note-editor-host::-webkit-scrollbar-track {
+    .note-editor-host .ProseMirror::-webkit-scrollbar-track {
       background: transparent;
     }
-    .note-editor-host::-webkit-scrollbar-thumb {
+    .note-editor-host .ProseMirror::-webkit-scrollbar-thumb {
       background-color: rgba(0, 0, 0, 0.15);
       border-radius: 6px;
       border: 3px solid transparent;
       background-clip: padding-box;
       transition: background-color var(--motion-duration) var(--motion-ease);
     }
-    #note-card.theme-dark .note-editor-host::-webkit-scrollbar-thumb {
+    #note-card.theme-dark .note-editor-host .ProseMirror::-webkit-scrollbar-thumb {
       background-color: rgba(255, 255, 255, 0.2);
     }
-    .note-editor-host::-webkit-scrollbar-thumb:hover {
+    .note-editor-host .ProseMirror::-webkit-scrollbar-thumb:hover {
       background-color: var(--note-accent) !important;
     }
 
@@ -2441,7 +2437,7 @@
             strikeThrough: noteEditor.isActive('strike'),
           }
         : { bold: false, italic: false, underline: false, strikeThrough: false };
-
+      
       formats.forEach(f => {
         const isActive = !!active[f.name];
         
