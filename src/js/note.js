@@ -464,7 +464,7 @@
             noteData.y = pos.y;
             noteData.width = size.width;
             noteData.height = size.height;
-            persistNotes();
+            persistNoteGeometry();
           }, 300);
         };
         appWindow.onResized(savePositionSize);
@@ -942,6 +942,33 @@
     };
 
     // Persist storage and emit notes-changed event globally
+    function persistNoteGeometry() {
+      let latestNotes = [];
+      try {
+        latestNotes = JSON.parse(localStorage.getItem('carrotnotes_notes') || '[]');
+      } catch (e) {
+        latestNotes = notes;
+      }
+
+      const idx = latestNotes.findIndex(n => n.id === noteId);
+      if (idx === -1) return;
+
+      latestNotes[idx] = {
+        ...latestNotes[idx],
+        x: noteData.x,
+        y: noteData.y,
+        width: noteData.width,
+        height: noteData.height,
+      };
+
+      const notesJson = JSON.stringify(latestNotes);
+      localStorage.setItem('carrotnotes_notes', notesJson);
+
+      if (invoke) {
+        invoke('save_notes', { notesJson }).catch(console.error);
+      }
+    }
+
     function persistNotes() {
       let latestNotes = [];
       try {

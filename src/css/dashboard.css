@@ -325,6 +325,10 @@
       background: rgba(60, 214, 158, 0.15);
       color: #034A2E;
     }
+    body.dark-mode .status-badge.active {
+      background: rgba(60, 214, 158, 0.22);
+      color: #7AEFC8;
+    }
     .status-badge.archived {
       background: rgba(0,0,0,0.06);
       color: #555;
