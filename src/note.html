@@ -531,21 +531,10 @@
       border-color: rgba(255, 255, 255, 0.15);
     }
     
-    /* Temporary note — pulsing edit (pencil) icon instead of Temp badge */
-    @keyframes tempEditPulse {
-      0%, 100% {
-        color: var(--note-accent);
-        opacity: 1;
-      }
-      50% {
-        color: var(--note-accent);
-        opacity: 0.35;
-      }
-    }
-
+    /* Temporary note — accent edit (pencil) icon instead of Temp badge */
     #edit-title-btn.temp-note-indicator {
       opacity: 1 !important;
-      animation: tempEditPulse 1.6s ease-in-out infinite;
+      color: var(--note-accent);
     }
 
     #edit-title-btn.temp-note-indicator svg {
@@ -1584,6 +1573,7 @@
         const newTitle = noteTitleInput.value.trim() || "Untitled Note";
         noteData.title = newTitle;
         noteData.isTemporary = false;
+        noteData.content = getEditorContent();
         noteTitleDisplay.innerText = newTitle;
         noteTitleInput.value = newTitle;
         
@@ -1594,12 +1584,9 @@
         editTitleBtn.style.display = 'inline-flex';
         updateTemporaryIndicator();
         
-        if (settings.autosave) {
-          persistNotes();
-          clearUnsavedChanges();
-        } else {
-          markUnsavedChanges();
-        }
+        clearTimeout(typingTimer);
+        persistNotes();
+        clearUnsavedChanges();
       };
 
       noteTitleInput.addEventListener('blur', () => {
