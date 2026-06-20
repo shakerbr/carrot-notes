@@ -5,6 +5,9 @@ build
 # Local developer notes (not for publication)
 developer/
 
+# Generated / packaged extras
+extras/**/*.zip
+
 # Rust / Tauri
 src-tauri/target/
 src-tauri/gen/
