@@ -10,6 +10,8 @@
     "postinstall": "npm run build:vendor"
   },
   "dependencies": {
+    "@fontsource/caveat": "^5.2.8",
+    "@fontsource/inter": "^5.2.8",
     "@tiptap/core": "^3.27.1",
     "@tiptap/extension-bullet-list": "^3.27.1",
     "@tiptap/extension-ordered-list": "^3.27.1",
