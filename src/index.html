@@ -2661,7 +2661,6 @@
         const note = notes.find(n => n.id === id);
         if (note) {
           note.title = newTitle;
-          note.isTemporary = false;
           persistNotes();
           
           // Emit settings-changed event to trigger note page refresh
