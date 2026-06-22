@@ -33,13 +33,6 @@
   <a href="CONTRIBUTING.md"><strong>Contributing</strong></a>
 </p>
 
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dashboard-my-notes-dark.png">
-    <img src="docs/screenshots/dashboard-my-notes-light.png" width="720" alt="Carrot Notes dashboard — My Notes tab with floating and archived note cards">
-  </picture>
-</p>
-
 ---
 
 ## Overview
@@ -59,7 +52,7 @@ Manage all your notes from one place — create, float, archive, pin, and previe
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dashboard-my-notes-dark.png">
-    <img src="docs/screenshots/dashboard-my-notes-light.png" width="680" alt="Dashboard — My Notes">
+    <img src="docs/screenshots/dashboard-my-notes-light.png" width="400" alt="Dashboard — My Notes">
   </picture>
 </p>
 
@@ -68,11 +61,11 @@ Manage all your notes from one place — create, float, archive, pin, and previe
 Each note is its own window. Pick a theme, resize, and keep it on your desktop.
 
 <p align="center">
-  <img src="docs/screenshots/note-theme-carrot-orange.png" width="220" alt="Note — Carrot Orange theme">
+  <img src="docs/screenshots/note-theme-carrot-orange.png" width="200" alt="Note — Carrot Orange theme">
   &nbsp;
-  <img src="docs/screenshots/note-theme-clean-dark-gray.png" width="220" alt="Note — Clean Dark Gray theme">
+  <img src="docs/screenshots/note-theme-clean-dark-gray.png" width="200" alt="Note — Clean Dark Gray theme">
   &nbsp;
-  <img src="docs/screenshots/note-theme-lavender-purple.png" width="220" alt="Note — Lavender Purple theme">
+  <img src="docs/screenshots/note-theme-lavender-purple.png" width="200" alt="Note — Lavender Purple theme">
 </p>
 
 ### Note toolbar
@@ -80,7 +73,7 @@ Each note is its own window. Pick a theme, resize, and keep it on your desktop.
 Save, lock, color, font, formatting, and always-on-top — everything in reach.
 
 <p align="center">
-  <img src="docs/screenshots/note-toolbar.png" width="680" alt="Note window toolbar with labeled controls">
+  <img src="docs/screenshots/note-toolbar.png" width="400" alt="Note window toolbar with labeled controls">
 </p>
 
 ### Sync & Cloud
@@ -90,7 +83,7 @@ Local folder sync, self-hosted cloud, restore from backup, and a danger zone for
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dashboard-sync-cloud-dark.png">
-    <img src="docs/screenshots/dashboard-sync-cloud-light.png" width="680" alt="Dashboard — Sync and Cloud settings">
+    <img src="docs/screenshots/dashboard-sync-cloud-light.png" width="400" alt="Dashboard — Sync and Cloud settings">
   </picture>
 </p>
 
@@ -101,7 +94,7 @@ Appearance, autosave, default formatting, custom fonts, and note colors.
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dashboard-preferences-dark.png">
-    <img src="docs/screenshots/dashboard-preferences-light.png" width="680" alt="Dashboard — Preferences">
+    <img src="docs/screenshots/dashboard-preferences-light.png" width="400" alt="Dashboard — Preferences">
   </picture>
 </p>
 
