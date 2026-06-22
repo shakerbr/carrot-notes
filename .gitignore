@@ -21,3 +21,7 @@ src-tauri/gen/
 .env.development
 .env.test
 .env.production
+
+# Next.js website
+website/node_modules
+website/.next
