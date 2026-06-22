@@ -108,7 +108,7 @@ export default function HomePage() {
               Each note lives in its own floating window — resize it, pin it,
               keep it always on top — while you write in a clean, Notion-style
               editor. Content is stored as Markdown, so your notes stay portable
-              and under your control. TESTING 123
+              and under your control.
             </p>
 
             <div className="hero-actions">
