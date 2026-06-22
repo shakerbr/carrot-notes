@@ -180,8 +180,11 @@ Download the latest release from [**GitHub Releases**](https://github.com/shaker
 ### Debian / Ubuntu (`.deb`)
 
 ```bash
+sudo apt update
 sudo apt install ./carrotnotes_0.1.1_amd64.deb
 ```
+
+> **Troubleshooting:** On some distros (e.g. Kubuntu, fresh Debian installs), `apt install` may report unmet dependencies such as `libayatana-appindicator3-1` or `libwebkit2gtk-4.1-0`. Run **`sudo apt update`** first so package indexes refresh — that usually resolves it. If problems persist, use the **AppImage** below (no system packages required).
 
 ### AppImage (portable)
 

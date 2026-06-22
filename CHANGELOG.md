@@ -8,6 +8,10 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 
 ## [Unreleased]
 
+### Changed
+
+- README install notes: run `apt update` before `.deb` install when dependencies are missing
+
 ---
 
 ## [0.1.1] — 2026-06-20
