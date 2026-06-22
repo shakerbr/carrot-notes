@@ -8,9 +8,18 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 
 ## [Unreleased]
 
-### Planned
+---
 
-See the project roadmap and open [issues](https://github.com/shakerbr/carrot-notes/issues) for upcoming work.
+## [0.1.1] — 2026-06-20
+
+### Fixed
+
+- Dashboard minimum width increased by 20px (480px) to prevent cramped layout
+- Bundled Inter and Caveat fonts ship with the app — handwriting and UI fonts work on distros without system fonts installed
+
+### Added
+
+- [Cloud sync API documentation](docs/CLOUD-SYNC.md) for self-hosted servers
 
 ---
 
@@ -62,5 +71,6 @@ See the project roadmap and open [issues](https://github.com/shakerbr/carrot-not
 
 ---
 
-[Unreleased]: https://github.com/shakerbr/carrot-notes/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/shakerbr/carrot-notes/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/shakerbr/carrot-notes/releases/tag/v0.1.1
 [0.1.0]: https://github.com/shakerbr/carrot-notes/releases/tag/v0.1.0

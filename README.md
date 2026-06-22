@@ -138,7 +138,7 @@ Appearance, autosave, default formatting, custom fonts, and note colors.
 ### Sync & backup
 
 - **Local folder** — JSON backup + individual `.md` files
-- **Cloud** — POST to your own endpoint (Bearer token)
+- **Cloud** — POST to your own endpoint (Bearer token) — see [**Cloud sync API**](docs/CLOUD-SYNC.md)
 - Manual, on-save, or scheduled sync
 - Deleted notes archived to `deleted/` on sync
 - Restore from sync — recover deleted or overwritten notes
@@ -165,7 +165,7 @@ Appearance, autosave, default formatting, custom fonts, and note colors.
 
 | Platform | Status | Packages |
 |----------|--------|----------|
-| **Linux** | Primary — tested on Ubuntu / GNOME (Wayland) | `.deb`, AppImage, `.rpm` |
+| **Linux** | Primary — tested on Ubuntu/GNOME, Kubuntu, Debian, elementary OS, and more | `.deb`, AppImage, `.rpm` |
 | **Windows** | May build via Tauri | Not officially tested |
 | **macOS** | May build via Tauri | Not officially tested |
 
@@ -180,14 +180,14 @@ Download the latest release from [**GitHub Releases**](https://github.com/shaker
 ### Debian / Ubuntu (`.deb`)
 
 ```bash
-sudo apt install ./carrotnotes_0.1.0_amd64.deb
+sudo apt install ./carrotnotes_0.1.1_amd64.deb
 ```
 
 ### AppImage (portable)
 
 ```bash
-chmod +x carrotnotes_0.1.0_amd64.AppImage
-./carrotnotes_0.1.0_amd64.AppImage
+chmod +x carrotnotes_0.1.1_amd64.AppImage
+./carrotnotes_0.1.1_amd64.AppImage
 ```
 
 ---
@@ -222,6 +222,10 @@ On GNOME + Wayland, dev and production builds use XWayland so **always-on-top wo
 | Notes | `~/.local/share/com.shakerbr.carrotnotes/notes.json` |
 | Settings | `~/.local/share/com.shakerbr.carrotnotes/settings.json` |
 | Sync folder | User-defined (contains `.md` files + `carrotnotes_backup.json`) |
+
+### Self-hosted cloud sync
+
+See **[docs/CLOUD-SYNC.md](docs/CLOUD-SYNC.md)** for the HTTP API contract, note JSON schema, and a minimal example server.
 
 ### Environment variables
 
