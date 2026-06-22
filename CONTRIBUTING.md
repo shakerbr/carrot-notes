@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="svg/carrot-app-icon/carrot-app-icon-dark.svg">
-    <img src="svg/carrot-app-icon/carrot-app-icon-light.svg" width="64" height="64" alt="Carrot Notes">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/svg/carrot-app-icon/carrot-app-icon-dark.svg">
+    <img src="docs/svg/carrot-app-icon/carrot-app-icon-light.svg" width="64" height="64" alt="Carrot Notes">
   </picture>
 </p>
 
@@ -65,7 +65,9 @@ carrot-notes/
 │   └── index.html        # Dashboard shell
 ├── src-tauri/            # Rust backend (Tauri commands, sync, windowing)
 ├── scripts/              # Vendor bundling (Tiptap, fonts)
-├── svg/                  # Brand assets (logos, icons)
+├── docs/                 # Screenshots and brand assets
+│   ├── screenshots/      # README / marketing images
+│   └── svg/              # Logos and icons
 └── extras/               # Optional GNOME Shell extension
 ```
 
@@ -101,7 +103,7 @@ Add search field to dashboard header
 
 ## Brand assets
 
-When adding docs or UI that needs the logo, use files from [`svg/`](svg/) rather than raster screenshots where possible.
+When adding docs or UI that needs the logo, use files from [`docs/svg/`](docs/svg/) rather than raster screenshots where possible.
 
 ---
 
@@ -110,5 +112,5 @@ When adding docs or UI that needs the logo, use files from [`svg/`](svg/) rather
 By contributing, you agree that your contributions will be licensed under the [MIT License](LICENSE).
 
 <p align="center">
-  <img src="svg/carrots/carrot-color.svg" width="32" height="32" alt="" aria-hidden="true">
+  <img src="docs/svg/carrots/carrot-color.svg" width="32" height="32" alt="" aria-hidden="true">
 </p>

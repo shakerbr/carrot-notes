@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="../../svg/carrots/carrot-color.svg" width="48" height="48" alt="Carrot Notes">
+  <img src="../../docs/svg/carrots/carrot-color.svg" width="48" height="48" alt="Carrot Notes">
 </p>
 
 <h1 align="center">GNOME Shell Extension</h1>

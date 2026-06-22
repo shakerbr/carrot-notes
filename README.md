@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="svg/carrot-app-icon/carrot-app-icon-dark.svg">
-    <img src="svg/carrot-app-icon/carrot-app-icon-light.svg" width="128" height="128" alt="Carrot Notes">
+    <source media="(prefers-color-scheme: dark)" srcset="docs/svg/carrot-app-icon/carrot-app-icon-dark.svg">
+    <img src="docs/svg/carrot-app-icon/carrot-app-icon-light.svg" width="128" height="128" alt="Carrot Notes">
   </picture>
 </p>
 
@@ -26,9 +26,18 @@
   ·
   <a href="#install"><strong>Install</strong></a>
   ·
+  <a href="#screenshots"><strong>Screenshots</strong></a>
+  ·
   <a href="CHANGELOG.md"><strong>Changelog</strong></a>
   ·
   <a href="CONTRIBUTING.md"><strong>Contributing</strong></a>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dashboard-my-notes-dark.png">
+    <img src="docs/screenshots/dashboard-my-notes-light.png" width="720" alt="Carrot Notes dashboard — My Notes tab with floating and archived note cards">
+  </picture>
 </p>
 
 ---
@@ -39,8 +48,61 @@ Carrot Notes is a **local-first desktop sticky-notes app** built with [Tauri](ht
 
 No account required. No vendor lock-in. Optional sync to a folder or your own server.
 
+---
+
+## Screenshots
+
+### Dashboard
+
+Manage all your notes from one place — create, float, archive, pin, and preview at a glance.
+
 <p align="center">
-  <img src="svg/carrots/carrot-color.svg" width="48" height="48" alt="" aria-hidden="true">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dashboard-my-notes-dark.png">
+    <img src="docs/screenshots/dashboard-my-notes-light.png" width="680" alt="Dashboard — My Notes">
+  </picture>
+</p>
+
+### Floating notes
+
+Each note is its own window. Pick a theme, resize, and keep it on your desktop.
+
+<p align="center">
+  <img src="docs/screenshots/note-theme-carrot-orange.png" width="220" alt="Note — Carrot Orange theme">
+  &nbsp;
+  <img src="docs/screenshots/note-theme-clean-dark-gray.png" width="220" alt="Note — Clean Dark Gray theme">
+  &nbsp;
+  <img src="docs/screenshots/note-theme-lavender-purple.png" width="220" alt="Note — Lavender Purple theme">
+</p>
+
+### Note toolbar
+
+Save, lock, color, font, formatting, and always-on-top — everything in reach.
+
+<p align="center">
+  <img src="docs/screenshots/note-toolbar.png" width="680" alt="Note window toolbar with labeled controls">
+</p>
+
+### Sync & Cloud
+
+Local folder sync, self-hosted cloud, restore from backup, and a danger zone for cleanup.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dashboard-sync-cloud-dark.png">
+    <img src="docs/screenshots/dashboard-sync-cloud-light.png" width="680" alt="Dashboard — Sync and Cloud settings">
+  </picture>
+</p>
+
+### Preferences
+
+Appearance, autosave, default formatting, custom fonts, and note colors.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dashboard-preferences-dark.png">
+    <img src="docs/screenshots/dashboard-preferences-light.png" width="680" alt="Dashboard — Preferences">
+  </picture>
 </p>
 
 ---
@@ -199,14 +261,15 @@ On GNOME + Wayland, dev and production builds use XWayland so **always-on-top wo
 
 ## Brand assets
 
-Logos and icons live in [`svg/`](svg/):
+Marketing and brand files live in [`docs/`](docs/):
 
 | Asset | Path |
 |-------|------|
-| App icon (light background) | `svg/carrot-app-icon/carrot-app-icon-light-bg-effect.svg` |
-| App icon (dark background) | `svg/carrot-app-icon/carrot-app-icon-dark-bg-effect.svg` |
-| Carrot mark (color) | `svg/carrots/carrot-color.svg` |
-| Carrot mark (mono) | `svg/carrots/carrot-white.svg`, `svg/carrots/carrot-black.svg` |
+| Screenshots | `docs/screenshots/` |
+| App icon (light background) | `docs/svg/carrot-app-icon/carrot-app-icon-light-bg-effect.svg` |
+| App icon (dark background) | `docs/svg/carrot-app-icon/carrot-app-icon-dark-bg-effect.svg` |
+| Carrot mark (color) | `docs/svg/carrots/carrot-color.svg` |
+| Carrot mark (mono) | `docs/svg/carrots/carrot-white.svg`, `docs/svg/carrots/carrot-black.svg` |
 
 ---
 
@@ -223,5 +286,5 @@ See [**CONTRIBUTING.md**](CONTRIBUTING.md) for development setup and guidelines.
 [MIT](LICENSE) © [Shaker Br](https://github.com/shakerbr)
 
 <p align="center">
-  <img src="svg/carrots/carrot-color.svg" width="32" height="32" alt="Carrot Notes" />
+  <img src="docs/svg/carrots/carrot-color.svg" width="32" height="32" alt="Carrot Notes" />
 </p>
