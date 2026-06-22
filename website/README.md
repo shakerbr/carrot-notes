@@ -9,6 +9,6 @@ Next.js marketing site for [carrot-notes.spidrahub.com](https://carrot-notes.spi
 | `npm run start` | Run production server |
 | `docker build -t carrot-notes-web .` | Build container |
 
-**Deploy to VM:** see [docs/WEBSITE-DEPLOY.md](../docs/WEBSITE-DEPLOY.md)
+**Deploy to VM:** see `developer/WEBSITE-DEPLOY.md` (gitignored, local only)
 
 **Site config** (version, download URLs): `src/lib/config.ts`

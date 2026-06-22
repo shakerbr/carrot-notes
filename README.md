@@ -28,8 +28,6 @@
   ·
   <a href="#screenshots"><strong>Screenshots</strong></a>
   ·
-  <a href="docs/WEBSITE-DEPLOY.md"><strong>Website deploy</strong></a>
-  ·
   <a href="CHANGELOG.md"><strong>Changelog</strong></a>
   ·
   <a href="CONTRIBUTING.md"><strong>Contributing</strong></a>
