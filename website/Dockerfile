@@ -24,11 +24,23 @@ ENV HOSTNAME=0.0.0.0
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./standalone
+COPY --from=builder /app/public /tmp/public
+COPY --from=builder /app/.next/static /tmp/static
 COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh \
-  && chown -R nextjs:nodejs ./standalone ./public /docker-entrypoint.sh
+RUN if [ -f ./standalone/website/server.js ]; then \
+      SERVER_DIR=./standalone/website; \
+    elif [ -f ./standalone/server.js ]; then \
+      SERVER_DIR=./standalone; \
+    else \
+      echo "server.js not found in standalone output" >&2; exit 1; \
+    fi \
+  && cp -r /tmp/public "$SERVER_DIR/public" \
+  && mkdir -p "$SERVER_DIR/.next" \
+  && cp -r /tmp/static "$SERVER_DIR/.next/static" \
+  && rm -rf /tmp/public /tmp/static \
+  && chmod +x /docker-entrypoint.sh \
+  && chown -R nextjs:nodejs ./standalone /docker-entrypoint.sh
 
 USER nextjs
 EXPOSE 3000
