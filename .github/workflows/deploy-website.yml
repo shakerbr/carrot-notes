@@ -22,7 +22,6 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script_stop: true
           script: |
             cd /opt/spidrahub
             bash ./apps/carrot-notes/website/scripts/deploy-on-vm.sh
