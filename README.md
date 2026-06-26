@@ -5,7 +5,7 @@
   </picture>
 </p>
 
-<h1 align="center">Carrot Notes - Dev</h1>
+<h1 align="center">Carrot Notes</h1>
 
 <p align="center">
   <strong>Lightweight floating sticky notes for Linux.</strong><br>
