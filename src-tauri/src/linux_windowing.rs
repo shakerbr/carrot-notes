@@ -19,6 +19,15 @@ pub fn configure_transparent_window(window: &tauri::WebviewWindow) {
     }
 }
 
+/// Apply taskbar visibility at the GTK level so the hint is in place before the
+/// window is mapped (tao's queued request can land too late on some setups).
+pub fn configure_taskbar_visibility(window: &tauri::WebviewWindow, skip_taskbar: bool) {
+    if let Ok(gtk_window) = window.gtk_window() {
+        gtk_window.set_skip_taskbar_hint(skip_taskbar);
+        gtk_window.set_skip_pager_hint(skip_taskbar);
+    }
+}
+
 /// Run the app through XWayland on Wayland sessions so always-on-top works without
 /// a GNOME Shell extension. Must run before GTK/WebKit initializes (see main.rs).
 pub fn configure_linux_windowing_backend() {

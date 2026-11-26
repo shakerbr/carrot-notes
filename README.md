@@ -126,6 +126,8 @@ Appearance, autosave, default formatting, custom fonts, and note colors.
 - Float, archive, pin, rename, duplicate, delete
 - System / Light / Dark appearance
 - System tray with pinned and recent notes
+- Start minimized to tray (optional)
+- Hide app windows from the taskbar (optional, tray-only mode)
 - Always-on-top per note
 - Dock / taskbar entries (Linux)
 - Remembers window position and size

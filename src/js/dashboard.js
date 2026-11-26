@@ -16,6 +16,8 @@
       autosaveInterval: 5,
       readOnlyMode: false,
       defaultReadOnly: false,
+      startInTray: false,
+      notesInTaskbar: true,
       customFonts: [],
       customFontSizes: [],
       colors: [
@@ -201,6 +203,8 @@
       // Default note formatting
       document.getElementById('strict-readonly-toggle').checked = settings.readOnlyMode;
       document.getElementById('default-readonly-toggle').checked = settings.defaultReadOnly || false;
+      document.getElementById('start-in-tray-toggle').checked = settings.startInTray || false;
+      document.getElementById('notes-taskbar-toggle').checked = settings.notesInTaskbar !== false;
       document.getElementById('autosave-toggle').checked = settings.autosave;
       document.getElementById('autosave-interval').value = settings.autosaveInterval;
       document.getElementById('default-width').value = settings.defaultSize.width;
@@ -272,6 +276,8 @@
       }
       settings.readOnlyMode = document.getElementById('strict-readonly-toggle').checked;
       settings.defaultReadOnly = document.getElementById('default-readonly-toggle').checked;
+      settings.startInTray = document.getElementById('start-in-tray-toggle').checked;
+      settings.notesInTaskbar = document.getElementById('notes-taskbar-toggle').checked;
       settings.autosave = document.getElementById('autosave-toggle').checked;
       settings.autosaveInterval = parseInt(document.getElementById('autosave-interval').value, 10) || 5;
       settings.defaultSize.width = parseInt(document.getElementById('default-width').value, 10) || 280;
@@ -1021,8 +1027,8 @@
         if (invoke) {
           invoke('open_note_window', {
             id: note.id,
-            x: note.x || null,
-            y: note.y || null,
+            x: null,
+            y: null,
             width: note.width || settings.defaultSize.width,
             height: note.height || settings.defaultSize.height,
             alwaysOnTop: note.alwaysOnTop || false
