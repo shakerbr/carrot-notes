@@ -635,7 +635,7 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      margin-bottom: 0;
+      margin-bottom: 16px;
     }
     .theme-segmented {
       --theme-index: 0;

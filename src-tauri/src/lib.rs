@@ -289,6 +289,52 @@ fn get_settings_path(app_handle: &tauri::AppHandle) -> Result<PathBuf, String> {
     Ok(path)
 }
 
+// Read a boolean setting from settings.json with a fallback default
+fn read_setting_bool(app_handle: &tauri::AppHandle, key: &str, default: bool) -> bool {
+    get_settings_path(app_handle)
+        .ok()
+        .and_then(|path| fs::read_to_string(path).ok())
+        .and_then(|content| serde_json::from_str::<serde_json::Value>(&content).ok())
+        .and_then(|settings| settings.get(key).and_then(|value| value.as_bool()))
+        .unwrap_or(default)
+}
+
+// Read the persisted geometry of a note from notes.json so windows can reopen in place
+fn read_note_geometry(
+    app_handle: &tauri::AppHandle,
+    note_id: &str,
+) -> (Option<f64>, Option<f64>, Option<f64>, Option<f64>, Option<bool>) {
+    let empty = (None, None, None, None, None);
+    let path = match get_notes_path(app_handle) {
+        Ok(path) => path,
+        Err(_) => return empty,
+    };
+    let Ok(content) = fs::read_to_string(path) else {
+        return empty;
+    };
+    let Ok(notes) = serde_json::from_str::<serde_json::Value>(&content) else {
+        return empty;
+    };
+    let Some(arr) = notes.as_array() else {
+        return empty;
+    };
+
+    for note in arr {
+        if note.get("id").and_then(|v| v.as_str()) == Some(note_id) {
+            let num = |key: &str| note.get(key).and_then(|v| v.as_f64());
+            return (
+                num("x"),
+                num("y"),
+                num("width"),
+                num("height"),
+                note.get("alwaysOnTop").and_then(|v| v.as_bool()),
+            );
+        }
+    }
+
+    empty
+}
+
 // Load notes from notes.json
 #[tauri::command]
 fn load_notes(app_handle: tauri::AppHandle) -> Result<String, String> {
@@ -895,10 +941,23 @@ fn open_note_window(
     always_on_top: Option<bool>,
 ) -> Result<(), String> {
     let label = format!("note_{}", id);
+    let skip_taskbar = !read_setting_bool(&app_handle, "notesInTaskbar", true);
+
+    // Fall back to the note's persisted geometry so windows reopen where they were,
+    // regardless of which entry point (dashboard or tray) opened them
+    let (saved_x, saved_y, saved_width, saved_height, saved_aot) = read_note_geometry(&app_handle, &id);
+    let x = x.or(saved_x);
+    let y = y.or(saved_y);
+    let width = width.or(saved_width);
+    let height = height.or(saved_height);
+    let always_on_top = always_on_top.or(saved_aot);
 
     // If the window already exists, focus it and re-apply always-on-top if needed
     if let Some(win) = app_handle.get_webview_window(&label) {
         win.set_min_size(Some(note_min_size())).map_err(|e| e.to_string())?;
+        let _ = win.set_skip_taskbar(skip_taskbar);
+        #[cfg(target_os = "linux")]
+        linux_windowing::configure_taskbar_visibility(&win, skip_taskbar);
         if let Some(aot) = always_on_top {
             apply_always_on_top(&win, aot, Some(&id))?;
         }
@@ -927,6 +986,7 @@ fn open_note_window(
     .background_color(Color(0, 0, 0, 0))
     .resizable(true)
     .visible(false)
+    .skip_taskbar(skip_taskbar)
     .on_page_load(move |window, payload| {
         if payload.event() != PageLoadEvent::Finished {
             return;
@@ -945,6 +1005,8 @@ fn open_note_window(
 
     #[cfg(target_os = "linux")]
     linux_windowing::configure_transparent_window(&win);
+    #[cfg(target_os = "linux")]
+    linux_windowing::configure_taskbar_visibility(&win, skip_taskbar);
 
     // Hook window destruction to update status in notes.json and notify dashboard
     let app_handle_clone = app_handle.clone();
@@ -1067,6 +1129,7 @@ pub fn run() {
                         }
                     } else if id.as_ref().starts_with("open_note_") {
                         let note_id = &id.as_ref()["open_note_".len()..];
+                        // Geometry is restored inside open_note_window from notes.json
                         let _ = open_note_window(app.clone(), note_id.to_string(), None, None, None, None, None);
                     }
                 })
@@ -1109,6 +1172,26 @@ pub fn run() {
                         window_clone.hide().unwrap();
                     }
                 });
+            }
+
+            // Tray-only mode: when "Show Windows in Taskbar" is off, keep every
+            // app window (dashboard included) out of the taskbar
+            let skip_taskbar = !read_setting_bool(app.handle(), "notesInTaskbar", true);
+            if skip_taskbar {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.set_skip_taskbar(skip_taskbar);
+                    #[cfg(target_os = "linux")]
+                    linux_windowing::configure_taskbar_visibility(&window, skip_taskbar);
+                }
+            }
+
+            // The "main" window is created hidden (tauri.conf.json); show it unless
+            // the user opted to start minimized to the system tray
+            if !read_setting_bool(app.handle(), "startInTray", false) {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
             }
 
             Ok(())

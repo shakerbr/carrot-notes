@@ -8,9 +8,18 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) an
 
 ## [Unreleased]
 
+### Added
+
+- Option to start minimized to tray — dashboard hidden at launch, floating notes still restore
+- Option to hide app windows from the taskbar for a tray-only experience
+
 ### Changed
 
 - README install notes: run `apt update` before `.deb` install when dependencies are missing
+
+### Fixed
+
+- Notes opened from the tray menu reopen at their last position and size
 
 ---
 
