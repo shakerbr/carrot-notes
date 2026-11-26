@@ -200,6 +200,23 @@
       });
     }
 
+    // Read the latest notes from disk so saves never resurrect stale webview copies
+    async function loadLatestNotes() {
+      if (invoke) {
+        try {
+          const notesJson = await invoke('load_notes');
+          return JSON.parse(notesJson || '[]');
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      try {
+        return JSON.parse(localStorage.getItem('carrotnotes_notes') || '[]');
+      } catch (e) {
+        return notes;
+      }
+    }
+
     // Initialize Note State
     document.addEventListener('DOMContentLoaded', async () => {
       // 1. Setup programmatic dragging listener to bypass Wayland drag limits
@@ -222,13 +239,8 @@
       // Load Settings from backend if available
       await loadSettings();
 
-      // Load all notes from storage
-      const savedNotesJson = localStorage.getItem('carrotnotes_notes') || '[]';
-      try {
-        notes = JSON.parse(savedNotesJson);
-      } catch (e) {
-        console.error(e);
-      }
+      // Load all notes from disk (localStorage only as a fallback)
+      notes = await loadLatestNotes();
 
       noteData = notes.find(n => n.id === noteId);
       if (!noteData) {
@@ -943,62 +955,58 @@
 
     // Persist storage and emit notes-changed event globally
     function persistNoteGeometry() {
-      let latestNotes = [];
-      try {
-        latestNotes = JSON.parse(localStorage.getItem('carrotnotes_notes') || '[]');
-      } catch (e) {
-        latestNotes = notes;
-      }
+      loadLatestNotes().then((latestNotes) => {
+        const idx = latestNotes.findIndex(n => n.id === noteId);
+        if (idx === -1) return;
 
-      const idx = latestNotes.findIndex(n => n.id === noteId);
-      if (idx === -1) return;
+        latestNotes[idx] = {
+          ...latestNotes[idx],
+          x: noteData.x,
+          y: noteData.y,
+          width: noteData.width,
+          height: noteData.height,
+        };
 
-      latestNotes[idx] = {
-        ...latestNotes[idx],
-        x: noteData.x,
-        y: noteData.y,
-        width: noteData.width,
-        height: noteData.height,
-      };
+        const notesJson = JSON.stringify(latestNotes);
+        localStorage.setItem('carrotnotes_notes', notesJson);
 
-      const notesJson = JSON.stringify(latestNotes);
-      localStorage.setItem('carrotnotes_notes', notesJson);
-
-      if (invoke) {
-        invoke('save_notes', { notesJson }).catch(console.error);
-      }
+        if (invoke) {
+          invoke('save_notes', { notesJson })
+            .then(() => {
+              if (window.__TAURI__) {
+                window.__TAURI__.event.emit('notes-changed');
+              }
+            })
+            .catch(console.error);
+        }
+      });
     }
 
     function persistNotes() {
-      let latestNotes = [];
-      try {
-        latestNotes = JSON.parse(localStorage.getItem('carrotnotes_notes') || '[]');
-      } catch (e) {
-        latestNotes = notes;
-      }
+      loadLatestNotes().then((latestNotes) => {
+        const idx = latestNotes.findIndex(n => n.id === noteId);
+        if (idx !== -1) {
+          latestNotes[idx] = noteData;
+        } else {
+          latestNotes.push(noteData);
+        }
 
-      const idx = latestNotes.findIndex(n => n.id === noteId);
-      if (idx !== -1) {
-        latestNotes[idx] = noteData;
-      } else {
-        latestNotes.push(noteData);
-      }
+        const notesJson = JSON.stringify(latestNotes);
+        localStorage.setItem('carrotnotes_notes', notesJson);
 
-      const notesJson = JSON.stringify(latestNotes);
-      localStorage.setItem('carrotnotes_notes', notesJson);
+        // Perform local sync if in on_save mode
+        triggerSyncIfOnSave(notesJson);
 
-      // Perform local sync if in on_save mode
-      triggerSyncIfOnSave(notesJson);
-
-      if (invoke) {
-        invoke('save_notes', { notesJson })
-          .then(() => {
-            if (window.__TAURI__) {
-              window.__TAURI__.event.emit('notes-changed');
-            }
-          })
-          .catch(console.error);
-      }
+        if (invoke) {
+          invoke('save_notes', { notesJson })
+            .then(() => {
+              if (window.__TAURI__) {
+                window.__TAURI__.event.emit('notes-changed');
+              }
+            })
+            .catch(console.error);
+        }
+      });
     }
     
     let isWindowDragging = false;
